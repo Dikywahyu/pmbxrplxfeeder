@@ -5,6 +5,30 @@
 @section('content')
 @push('styles')
 <style>
+    #pmb-admin .pmb-admin-hero { position: relative; overflow: hidden; border: 0; border-radius: 1rem; background: linear-gradient(115deg, #315efb 0%, #6545d8 52%, #9b4bd6 100%); box-shadow: 0 12px 30px rgba(72, 84, 210, .2); }
+    #pmb-admin .pmb-admin-hero::before, #pmb-admin .pmb-admin-hero::after { position: absolute; content: ''; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; pointer-events: none; }
+    #pmb-admin .pmb-admin-hero::before { width: 270px; height: 270px; right: 7%; top: -185px; }
+    #pmb-admin .pmb-admin-hero::after { width: 190px; height: 190px; right: 2%; bottom: -145px; }
+    #pmb-admin .pmb-admin-hero .pmb-hero-icon { display: grid; width: 62px; height: 62px; place-items: center; border: 1px solid rgba(255,255,255,.28); border-radius: 1.1rem; background: rgba(255,255,255,.16); color: #fff; font-size: 2rem; backdrop-filter: blur(5px); }
+    #pmb-admin .pmb-admin-hero .pmb-hero-eyebrow { color: rgba(255,255,255,.78); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    #pmb-admin .pmb-admin-hero h4 { color: #fff; font-size: clamp(1.25rem, 2vw, 1.65rem); }
+    #pmb-admin .pmb-admin-hero p { color: rgba(255,255,255,.82) !important; }
+    #pmb-admin .pmb-shell-card { border: 1px solid #edf0f7; border-radius: 1rem; box-shadow: 0 8px 24px rgba(33, 52, 91, .055); }
+    #pmb-content .pmb-stat-card { position: relative; min-height: 150px; overflow: hidden; border: 0; border-radius: 1rem; box-shadow: 0 8px 20px rgba(31, 49, 81, .08); transition: transform .18s ease, box-shadow .18s ease; }
+    #pmb-content .pmb-stat-card:hover { transform: translateY(-3px); box-shadow: 0 13px 25px rgba(31, 49, 81, .14); }
+    #pmb-content .pmb-stat-card::after { position: absolute; width: 130px; height: 130px; right: -48px; bottom: -67px; border: 20px solid rgba(255,255,255,.17); border-radius: 50%; content: ''; }
+    #pmb-content .pmb-stat-card .pmb-stat-icon { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.28); border-radius: .85rem; background: rgba(255,255,255,.17); color: #fff; font-size: 1.35rem; }
+    #pmb-content .pmb-stat-card .pmb-stat-label { color: rgba(255,255,255,.84); font-size: .8rem; font-weight: 600; }
+    #pmb-content .pmb-stat-card h3 { color: #fff; font-size: 1.85rem; font-weight: 750; }
+    #pmb-content .pmb-stat-card small { color: rgba(255,255,255,.78); }
+    #pmb-content .pmb-stat-blue { background: linear-gradient(135deg, #4387ff, #3154d9); }
+    #pmb-content .pmb-stat-amber { background: linear-gradient(135deg, #ffb547, #f07b38); }
+    #pmb-content .pmb-stat-green { background: linear-gradient(135deg, #32c995, #119b79); }
+    #pmb-content .pmb-stat-red { background: linear-gradient(135deg, #ff7d91, #e34c69); }
+    #pmb-content .pmb-stat-violet { background: linear-gradient(135deg, #a27aff, #744de0); }
+    #pmb-content .pmb-stat-cyan { background: linear-gradient(135deg, #35bfd1, #168da9); }
+    #pmb-content .pmb-overview-chart { overflow: hidden; border: 1px solid #edf0f7; border-radius: 1rem; background: linear-gradient(145deg, #fff 58%, #f4f7ff); box-shadow: 0 8px 24px rgba(33, 52, 91, .055); }
+    #pmb-content .pmb-overview-chart .card-header { border-bottom: 1px solid #edf0f7; background: transparent; }
     .pmb-registrations-responsive { overflow-x: auto; border: 1px solid #edf0f5; border-radius: .75rem; }
     .pmb-registrations-responsive table { min-width: 1100px; margin-bottom: 0; }
     .pmb-registrations-responsive thead th { padding: .85rem .75rem; color: #44516a; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .035em; white-space: nowrap; }
@@ -46,24 +70,25 @@
 <div class="container-fluid" id="pmb-admin"
     data-section="{{ $section }}"
     data-data-url="{{ route('admin.pmb.data', ['section' => '__SECTION__']) }}">
-    <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+    <div class="card pmb-admin-hero position-relative overflow-hidden mb-4">
         <div class="card-body px-4 py-3">
             <div class="row align-items-center">
-                <div class="col-9">
+                <div class="col-9 position-relative" style="z-index:1">
                     @php
                         $sectionTitles = ['overview' => 'Ringkasan PMB', 'registrations' => 'Data Pendaftar', 'periods' => 'Periode Pendaftaran', 'paths' => 'Jalur Pendaftaran', 'programs' => 'Program Studi', 'fees' => 'Pengaturan Biaya', 'referrals' => 'Marketing & Referral', 'requirements' => 'Persyaratan Berkas'];
                     @endphp
+                    <span class="pmb-hero-eyebrow">Portal administrasi</span>
                     <h4 class="fw-semibold mb-1">{{ $sectionTitles[$section] ?? 'Administrasi PMB' }}</h4>
-                    <p class="text-muted mb-0">Administrasi penerimaan mahasiswa baru.</p>
+                    <p class="mb-0">Kelola proses penerimaan mahasiswa baru dalam satu tempat.</p>
                 </div>
-                <div class="col-3 text-center"><i class="ti ti-school text-primary" style="font-size:3rem"></i></div>
+                <div class="col-3 d-flex justify-content-center position-relative" style="z-index:1"><span class="pmb-hero-icon"><i class="ti ti-school"></i></span></div>
             </div>
         </div>
     </div>
 
     <div id="pmb-feedback" class="alert d-none" role="alert" aria-live="polite"></div>
 
-    <div class="card">
+    <div class="card pmb-shell-card">
         <div class="card-body">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
                 <div><h5 class="card-title mb-1">{{ $sectionTitles[$section] ?? 'Manajemen Penerimaan' }}</h5><span class="text-muted small">Kelola data kategori ini.</span></div>
@@ -270,7 +295,8 @@
                     legend: { position: 'bottom' },
                     dataLabels: { enabled: true },
                     noData: { text: 'Belum ada data pendaftar' },
-                    colors: ['#6c757d', '#539bff', '#ffae1f', '#13deb9', '#fa896b'],
+                    stroke: { colors: ['#fff'], width: 3 },
+                    colors: ['#94a3b8', '#4387ff', '#ffb547', '#35bfd1', '#32c995', '#a27aff', '#ff7d91', '#e34c69'],
                 });
                 chart.render();
             }
