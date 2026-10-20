@@ -211,10 +211,14 @@ Route::middleware(['auth'])->prefix('pmb')->name('pmb.')->group(function () {
     Route::post('/exams/attempts/{attemptId}', [CbtController::class, 'submit'])->name('exams.submit');
     Route::get('/exams/attempts/{attemptId}/result', [CbtController::class, 'result'])->name('exams.result');
     Route::post('/registrations', [PmbController::class, 'store'])->name('registrations.store');
+    Route::put('/profile', [PmbController::class, 'saveCandidateProfile'])->name('profile.update');
     Route::post('/registrations/{registrationId}/payments/{paymentId}/proof', [PmbController::class, 'uploadPaymentProof'])
         ->name('payments.proof');
     Route::get('/payments/{paymentId}/proof', [PmbController::class, 'downloadPaymentProof'])
         ->name('payments.download');
+    Route::post('/registrations/{registrationId}/documents/{requirementId}', [PmbController::class, 'uploadCandidateDocument'])->name('documents.upload');
+    Route::get('/documents/{documentId}', [PmbController::class, 'downloadCandidateDocument'])->name('documents.download');
+    Route::get('/documents/{documentId}/preview', [PmbController::class, 'previewCandidateDocument'])->name('documents.preview');
 });
 
 Route::prefix('admin/cbt')->name('admin.cbt.')->middleware(['auth', 'verified', '2fa', 'can:pmb-cbt-manage'])->group(function () {
@@ -234,6 +238,10 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::get('/', [PmbController::class, 'adminIndex'])->name('index');
     Route::get('/section/{section}', [PmbController::class, 'adminSection'])->name('section');
     Route::get('/data/{section}', [PmbController::class, 'adminData'])->name('data');
+    Route::patch('/documents/{documentId}/verification', [PmbController::class, 'verifyCandidateDocument'])->middleware('can:pmb-review')->name('documents.verify');
+    Route::post('/requirements', [PmbController::class, 'storeDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.store');
+    Route::put('/requirements/{requirementId}', [PmbController::class, 'updateDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.update');
+    Route::delete('/requirements/{requirementId}', [PmbController::class, 'destroyDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.destroy');
     Route::post('/referrals', [PmbController::class, 'storeReferral'])->middleware('can:pmb-manage')->name('referrals.store');
     Route::patch('/referrals/{referralId}/status', [PmbController::class, 'updateReferralStatus'])->middleware('can:pmb-manage')->name('referrals.status');
     Route::delete('/referrals/{referralId}', [PmbController::class, 'destroyReferral'])->middleware('can:pmb-manage')->name('referrals.destroy');

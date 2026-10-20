@@ -3,6 +3,46 @@
 @section('title', 'Administrasi PMB')
 
 @section('content')
+@push('styles')
+<style>
+    .pmb-registrations-responsive { overflow-x: auto; border: 1px solid #edf0f5; border-radius: .75rem; }
+    .pmb-registrations-responsive table { min-width: 1100px; margin-bottom: 0; }
+    .pmb-registrations-responsive thead th { padding: .85rem .75rem; color: #44516a; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .035em; white-space: nowrap; }
+    .pmb-registrations-responsive tbody td { padding: .8rem .75rem; }
+    .pmb-document-chip { display: inline-flex; align-items: center; gap: .38rem; margin: .12rem .2rem .12rem 0; padding: .38rem .58rem; border: 1px solid #e0e7f3; border-radius: 999px; background: #f6f8fc; color: #344054; font: inherit; font-size: .76rem; font-weight: 600; line-height: 1; white-space: nowrap; transition: transform .15s ease, box-shadow .15s ease; }
+    .pmb-document-chip:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(40, 70, 120, .12); }
+    .pmb-document-chip small { padding: .2rem .38rem; border-radius: 999px; background: #e9efff; color: #4263a8; font-size: .65rem; font-weight: 700; }
+    .pmb-document-chip[data-kind="identity"] { border-color: #b9d5ff; background: #f1f7ff; color: #2459a6; }
+    .pmb-document-chip[data-kind="family"] { border-color: #d7c8ff; background: #f7f3ff; color: #6842ad; }
+    .pmb-document-chip[data-kind="poverty"] { border-color: #ffd79b; background: #fff8eb; color: #9a5a00; }
+    .pmb-document-chip[data-kind="diploma"] { border-color: #a9e5d2; background: #effbf6; color: #147653; }
+    .pmb-document-chip[data-kind="kip"] { border-color: #a8e5ed; background: #effbfd; color: #087b8b; }
+    .pmb-document-chip[data-kind="aid"] { border-color: #f3bfd9; background: #fff3f8; color: #a43c71; }
+    .pmb-document-chip[data-status="valid"] small { background: #d9f5e8; color: #11764e; }
+    .pmb-document-chip[data-status="invalid"] small { background: #ffe2dc; color: #b54735; }
+    .pmb-document-chip[data-status="pending"] small { background: #e4edff; color: #3159a5; }
+    .pmb-document-chevron { opacity: .5; }
+    .pmb-document-preview { display: flex; min-height: 220px; max-height: 68vh; align-items: center; justify-content: center; overflow: auto; border: 1px solid #e8edf5; border-radius: .75rem; background: #f5f7fb; }
+    .pmb-document-preview:empty::before { content: 'Pratinjau berkas akan tampil di sini'; color: #8490a3; font-size: .9rem; }
+    .pmb-document-preview img { display: block; max-width: 100%; max-height: 68vh; object-fit: contain; }
+    .pmb-document-preview iframe { display: block; width: 100%; height: 68vh; min-height: 420px; border: 0; background: #fff; }
+    .pmb-status-select { min-width: 145px; border-color: #dce4f0; font-size: .82rem; }
+    .pmb-status-select:focus { border-color: #5d87ff; box-shadow: 0 0 0 .2rem rgba(93, 135, 255, .14); }
+    @media (max-width: 991.98px) {
+        .pmb-registrations-responsive { overflow: visible; border: 0; }
+        .pmb-registrations-responsive table { min-width: 0 !important; width: 100% !important; }
+        .pmb-registrations-responsive thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+        .pmb-registrations-responsive tbody { display: block; }
+        .pmb-registrations-responsive tbody tr { display: block; margin-bottom: .9rem; padding: .35rem .75rem; border: 1px solid #e8edf5; border-radius: .85rem; background: #fff; box-shadow: 0 4px 14px rgba(31, 54, 91, .06); }
+        .pmb-registrations-responsive tbody td { display: flex !important; align-items: flex-start; justify-content: space-between; gap: 1rem; width: 100% !important; padding: .65rem 0; border: 0 !important; border-bottom: 1px solid #f0f2f6 !important; white-space: normal !important; }
+        .pmb-registrations-responsive tbody td::before { content: attr(data-label); flex: 0 0 32%; color: #7a869a; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .025em; }
+        .pmb-registrations-responsive tbody td[data-label="Status seleksi"] form { flex: 1; }
+        .pmb-registrations-responsive tbody td[data-label="Status seleksi"] select { width: 100%; }
+        .pmb-registrations-responsive tbody td:last-child { border-bottom: 0 !important; }
+        .pmb-document-chip { white-space: normal; }
+    }
+</style>
+@endpush
 <div class="container-fluid" id="pmb-admin"
     data-section="{{ $section }}"
     data-data-url="{{ route('admin.pmb.data', ['section' => '__SECTION__']) }}">
@@ -11,7 +51,7 @@
             <div class="row align-items-center">
                 <div class="col-9">
                     @php
-                        $sectionTitles = ['overview' => 'Ringkasan PMB', 'registrations' => 'Data Pendaftar', 'periods' => 'Periode Pendaftaran', 'paths' => 'Jalur Pendaftaran', 'programs' => 'Program Studi', 'fees' => 'Pengaturan Biaya', 'referrals' => 'Marketing & Referral'];
+                        $sectionTitles = ['overview' => 'Ringkasan PMB', 'registrations' => 'Data Pendaftar', 'periods' => 'Periode Pendaftaran', 'paths' => 'Jalur Pendaftaran', 'programs' => 'Program Studi', 'fees' => 'Pengaturan Biaya', 'referrals' => 'Marketing & Referral', 'requirements' => 'Persyaratan Berkas'];
                     @endphp
                     <h4 class="fw-semibold mb-1">{{ $sectionTitles[$section] ?? 'Administrasi PMB' }}</h4>
                     <p class="text-muted mb-0">Administrasi penerimaan mahasiswa baru.</p>
@@ -41,6 +81,28 @@
     </div>
 </div>
 
+<div class="modal fade" id="pmb-document-review-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header"><div><h5 class="modal-title" id="pmb-document-review-title">Review berkas</h5><small class="text-muted" id="pmb-document-review-status"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+        <div class="modal-body">
+            <div id="pmb-document-preview" class="pmb-document-preview mb-3" aria-live="polite"></div>
+            <a class="btn btn-outline-primary btn-sm mb-3" id="pmb-document-review-download" href="#" target="_blank" rel="noopener">Unduh berkas</a>
+            @can('pmb-review')
+                <form id="pmb-document-review-form">
+                    @csrf
+                    <input type="hidden" name="status_verifikasi">
+                    <label class="form-label" for="pmb-document-review-note">Catatan perbaikan</label>
+                    <textarea class="form-control" id="pmb-document-review-note" name="catatan_admin" rows="3" placeholder="Isi catatan bila berkas perlu diperbaiki"></textarea>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button class="btn btn-outline-danger" type="submit" value="invalid" data-document-status-submit>Perlu perbaikan</button>
+                        <button class="btn btn-success" type="submit" value="valid" data-document-status-submit>Setujui berkas</button>
+                    </div>
+                </form>
+            @endcan
+        </div>
+    </div></div>
+</div>
+
 <div class="modal fade" id="pmb-edit-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <form id="pmb-edit-form">
@@ -68,6 +130,9 @@
     const editModal = new bootstrap.Modal(document.getElementById('pmb-edit-modal'));
     const editForm = document.getElementById('pmb-edit-form');
     const editFields = document.getElementById('pmb-edit-fields');
+    const documentModalElement = document.getElementById('pmb-document-review-modal');
+    const documentModal = new bootstrap.Modal(documentModalElement);
+    const documentReviewForm = document.getElementById('pmb-document-review-form');
     const schemas = {
         periods: [
             ['nama_periode', 'Nama periode', 'text'], ['tanggal_mulai', 'Tanggal mulai', 'date'],
@@ -82,11 +147,16 @@
             ['nama_mahasiswa', 'Nama pendaftar', 'text'], ['nik', 'NIK', 'text'],
             ['jenis_kelamin', 'Jenis kelamin', 'select', [['', 'Belum diisi'], ['L', 'Laki-laki'], ['P', 'Perempuan']]],
             ['handphone', 'Nomor handphone', 'text'],
-            ['status', 'Status pendaftaran', 'select', [['draft', 'Draft'], ['berkas_masuk', 'Berkas masuk'], ['review', 'Dalam review'], ['lulus', 'Lulus'], ['ditolak', 'Ditolak']]],
+            ['status', 'Status pendaftaran', 'select', [['draft', 'Draft'], ['berkas_masuk', 'Berkas masuk'], ['review', 'Dalam review'], ['sudah_ujian', 'Sudah ujian'], ['lulus', 'Lulus'], ['diterima', 'Diterima'], ['ditolak', 'Ditolak'], ['mundur', 'Mundur']]],
         ],
         fees: [
             ['period_id', 'Periode', 'select'], ['path_id', 'Jalur', 'select'], ['program_id', 'Program studi', 'select'],
             ['nominal_pendaftaran', 'Biaya pendaftaran (Rp)', 'number'], ['nominal_spp', 'SPP (Rp)', 'number'],
+        ],
+        requirements: [
+            ['path_id', 'Jalur pendaftaran', 'select'], ['nama_dokumen', 'Nama berkas', 'text'],
+            ['is_required', 'Wajib diunggah', 'select', [['1', 'Ya'], ['0', 'Tidak']]],
+            ['format_file', 'Format berkas (pisahkan koma)', 'text'],
         ],
     };
 
@@ -99,7 +169,9 @@
         if (!window.jQuery || !$.fn.DataTable) return;
         $(content).find('.pmb-data-table').each(function () {
             $(this).DataTable({
-                responsive: true,
+                scrollX: activeSection !== 'registrations',
+                scrollCollapse: true,
+                autoWidth: false,
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Semua']],
                 order: [],
@@ -210,6 +282,52 @@
         catch (error) { message(error.message, true); }
     });
 
+    root.addEventListener('change', async (event) => {
+        const select = event.target.closest('[data-registration-status-form] select[name="status"]');
+        if (!select) return;
+
+        const form = select.form;
+        const previousStatus = select.dataset.currentStatus;
+        const nextStatus = select.value;
+        const nextLabel = select.options[select.selectedIndex]?.text || nextStatus;
+        const confirmation = await Swal.fire({
+            title: 'Ubah status pendaftar?',
+            text: `Status pendaftar akan diubah menjadi "${nextLabel}".`,
+            icon: ['ditolak', 'mundur'].includes(nextStatus) ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, ubah status',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: ['ditolak', 'mundur'].includes(nextStatus) ? '#fa896b' : '#5d87ff',
+        });
+
+        if (!confirmation.isConfirmed) {
+            select.value = previousStatus;
+            return;
+        }
+
+        const body = new FormData(form);
+        select.disabled = true;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body,
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const errors = Object.values(result.errors || {}).flat();
+                throw new Error(errors.join(' ') || result.message || 'Status pendaftar gagal diperbarui.');
+            }
+            await loadSection();
+            message(result.message || 'Status pendaftar berhasil diperbarui.');
+        } catch (error) {
+            select.value = previousStatus;
+            select.disabled = false;
+            message(error.message || 'Status pendaftar gagal diperbarui.', true);
+        }
+    });
+
     root.addEventListener('submit', async (event) => {
         const form = event.target.closest('[data-ajax-form]');
         if (!form) return;
@@ -244,6 +362,38 @@
     });
 
     root.addEventListener('click', async (event) => {
+        const documentButton = event.target.closest('[data-document-review]');
+        if (documentButton) {
+            documentReviewForm && (documentReviewForm.action = documentButton.dataset.reviewUrl);
+            documentModalElement.querySelector('#pmb-document-review-title').textContent = documentButton.dataset.documentName;
+            documentModalElement.querySelector('#pmb-document-review-status').textContent = `Status saat ini: ${documentButton.dataset.documentStatus}`;
+            documentModalElement.querySelector('#pmb-document-review-download').href = documentButton.dataset.documentUrl;
+            const preview = documentModalElement.querySelector('#pmb-document-preview');
+            preview.replaceChildren();
+            const extension = documentButton.dataset.documentExtension;
+            const previewUrl = documentButton.dataset.documentPreviewUrl;
+            if (['jpg', 'jpeg', 'png', 'webp'].includes(extension)) {
+                const image = document.createElement('img');
+                image.src = previewUrl;
+                image.alt = `Pratinjau ${documentButton.dataset.documentName}`;
+                preview.append(image);
+            } else if (extension === 'pdf') {
+                const frame = document.createElement('iframe');
+                frame.src = previewUrl;
+                frame.title = `Pratinjau ${documentButton.dataset.documentName}`;
+                frame.loading = 'lazy';
+                preview.append(frame);
+            } else {
+                preview.textContent = 'Format ini belum mendukung pratinjau. Silakan unduh berkas.';
+            }
+            if (documentReviewForm) {
+                documentReviewForm.reset();
+                documentReviewForm.querySelector('[name="status_verifikasi"]').value = '';
+            }
+            documentModal.show();
+            return;
+        }
+
         const copyButton = event.target.closest('[data-copy-link]');
         if (copyButton) {
             try {
@@ -305,6 +455,41 @@
         }
 
     });
+
+    if (documentReviewForm) {
+        documentReviewForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submitButton = event.submitter;
+            const status = submitButton?.value;
+            const note = documentReviewForm.querySelector('[name="catatan_admin"]');
+            if (!status) return;
+            if (status === 'invalid' && !note.value.trim()) {
+                note.focus();
+                message('Isi catatan agar pendaftar mengetahui perbaikan yang diperlukan.', true);
+                return;
+            }
+            const body = new FormData(documentReviewForm);
+            body.set('status_verifikasi', status);
+            body.append('_method', 'PATCH');
+            submitButton.disabled = true;
+            try {
+                const response = await fetch(documentReviewForm.action, {
+                    method: 'POST', body,
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                    credentials: 'same-origin',
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Status berkas gagal diperbarui.');
+                documentModal.hide();
+                await loadSection();
+                message(result.message || 'Status berkas berhasil diperbarui.');
+            } catch (error) {
+                message(error.message || 'Status berkas gagal diperbarui.', true);
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+    }
 
     editForm.addEventListener('submit', async (event) => {
         event.preventDefault();

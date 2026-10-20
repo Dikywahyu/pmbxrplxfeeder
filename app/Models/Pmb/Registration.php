@@ -58,6 +58,11 @@ class Registration extends Model
         return $this->hasMany(Payment::class, 'registration_id');
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(CandidateDocument::class, 'registration_id');
+    }
+
     public function rplConversions(): HasMany
     {
         return $this->hasMany(RplConversion::class, 'registration_id');

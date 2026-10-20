@@ -118,6 +118,15 @@ class AppServiceProvider extends ServiceProvider
                     'permission' => 'pmb-manage',
                 ],
                 [
+                    'title' => 'Persyaratan Berkas',
+                    'icon' => 'solar:document-text-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'requirements']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/requirements'),
+                    'permission' => 'pmb-manage',
+                ],
+                [
                     'title' => 'Biaya PMB',
                     'icon' => 'solar:wallet-money-line-duotone',
                     'url' => route('admin.pmb.section', ['section' => 'fees']),

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pmb\Candidate;
 use App\Models\Pmb\CandidateDocument;
+use App\Models\Pmb\DocumentRequirement;
 use App\Models\Pmb\Fee;
 use App\Models\Pmb\Payment;
 use App\Models\Pmb\Path as PmbPath;
@@ -39,19 +40,33 @@ class PmbController extends Controller
         $fees = Fee::with(['period', 'path', 'program'])
             ->get()
             ->keyBy(fn (Fee $fee) => "{$fee->period_id}:{$fee->path_id}:{$fee->program_id}");
-        $feeOptions = $fees->map(fn (Fee $fee) => [
-            'period_id' => $fee->period_id,
-            'path_id' => $fee->path_id,
-            'program_id' => $fee->program_id,
-            'amount' => (float) $fee->nominal_pendaftaran,
-        ])->values();
+        $admissionCards = $paths->map(function (PmbPath $path) use ($periods, $programs, $fees) {
+            $options = collect();
+            foreach ($periods as $period) {
+                foreach ($programs as $program) {
+                    $fee = $fees->get("{$period->id}:{$path->id}:{$program->id}");
+                    if ($fee) {
+                        $options->push([
+                            'period_id' => $period->id,
+                            'period_name' => $period->nama_periode,
+                            'program_id' => $program->id,
+                            'program_name' => $program->nama_prodi.' ('.$program->jenjang.')',
+                            'amount' => (float) $fee->nominal_pendaftaran,
+                        ]);
+                    }
+                }
+            }
+            return ['path' => $path, 'options' => $options];
+        })->filter(fn ($card) => $card['options']->isNotEmpty())->values();
 
         $registrations = $candidate
             ? $candidate->registrations()
-                ->with(['period', 'path', 'program1', 'payments'])
+                ->with(['period', 'path.documentRequirements', 'program1', 'payments', 'documents.requirement'])
                 ->latest()
                 ->get()
             : collect();
+        $profileFields = ['nama_mahasiswa', 'nik', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'handphone', 'jalan', 'kelurahan'];
+        $profileComplete = $candidate && collect($profileFields)->every(fn ($field) => filled($candidate->{$field}));
 
         return view('pmb.index', compact(
             'candidate',
@@ -59,18 +74,81 @@ class PmbController extends Controller
             'paths',
             'programs',
             'fees',
-            'feeOptions',
-            'registrations'
+            'admissionCards',
+            'registrations',
+            'profileComplete'
         ));
+    }
+
+    public function saveCandidateProfile(Request $request)
+    {
+        $data = $request->validate([
+            'nama_mahasiswa' => ['required', 'string', 'max:255'],
+            'nik' => ['nullable', 'digits:16'],
+            'nisn' => ['nullable', 'string', 'max:20'],
+            'npwp' => ['nullable', 'string', 'max:25'],
+            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
+            'tempat_lahir' => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir' => ['nullable', 'date', 'before:today'],
+            'id_agama' => ['nullable', 'string', 'max:5'],
+            'handphone' => ['nullable', 'string', 'max:20'],
+            'telepon' => ['nullable', 'string', 'max:20'],
+            'jalan' => ['nullable', 'string', 'max:255'],
+            'dusun' => ['nullable', 'string', 'max:255'],
+            'rt' => ['nullable', 'string', 'max:5'],
+            'rw' => ['nullable', 'string', 'max:5'],
+            'kelurahan' => ['nullable', 'string', 'max:255'],
+            'kode_pos' => ['nullable', 'string', 'max:10'],
+            'id_wilayah' => ['nullable', 'string', 'max:10'],
+            'id_negara' => ['nullable', 'string', 'max:5'],
+            'nomor_daftar_kip' => ['nullable', 'string', 'max:90'],
+            'nomor_kip' => ['nullable', 'string', 'max:50'],
+            'nomor_kks' => ['nullable', 'string', 'max:50'],
+            'nomor_kps' => ['nullable', 'string', 'max:50'],
+            'penerima_kps' => ['nullable', 'boolean'],
+            'terdaftar_dtks' => ['nullable', 'boolean'],
+            'nama_ayah' => ['nullable', 'string', 'max:255'],
+            'nik_ayah' => ['nullable', 'string', 'max:20'],
+            'tanggal_lahir_ayah' => ['nullable', 'date', 'before:today'],
+            'id_pendidikan_ayah' => ['nullable', 'string', 'max:5'],
+            'nama_pendidikan_ayah' => ['nullable', 'string', 'max:255'],
+            'id_pekerjaan_ayah' => ['nullable', 'string', 'max:5'],
+            'nama_pekerjaan_ayah' => ['nullable', 'string', 'max:255'],
+            'id_penghasilan_ayah' => ['nullable', 'string', 'max:5'],
+            'nama_penghasilan_ayah' => ['nullable', 'string', 'max:255'],
+            'nama_ibu_kandung' => ['nullable', 'string', 'max:255'],
+            'nik_ibu' => ['nullable', 'string', 'max:20'],
+            'tanggal_lahir_ibu' => ['nullable', 'date', 'before:today'],
+            'id_pendidikan_ibu' => ['nullable', 'string', 'max:5'],
+            'nama_pendidikan_ibu' => ['nullable', 'string', 'max:255'],
+            'id_pekerjaan_ibu' => ['nullable', 'string', 'max:5'],
+            'nama_pekerjaan_ibu' => ['nullable', 'string', 'max:255'],
+            'id_penghasilan_ibu' => ['nullable', 'string', 'max:5'],
+            'nama_penghasilan_ibu' => ['nullable', 'string', 'max:255'],
+            'nama_wali' => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir_wali' => ['nullable', 'date', 'before:today'],
+            'id_pendidikan_wali' => ['nullable', 'string', 'max:5'],
+            'nama_pendidikan_wali' => ['nullable', 'string', 'max:255'],
+            'id_pekerjaan_wali' => ['nullable', 'string', 'max:5'],
+            'nama_pekerjaan_wali' => ['nullable', 'string', 'max:255'],
+            'id_penghasilan_wali' => ['nullable', 'string', 'max:5'],
+            'nama_penghasilan_wali' => ['nullable', 'string', 'max:255'],
+        ], ['nik.digits' => 'NIK harus terdiri dari 16 angka.']);
+
+        $data['penerima_kps'] = $request->boolean('penerima_kps');
+        $data['terdaftar_dtks'] = $request->boolean('terdaftar_dtks');
+
+        Candidate::updateOrCreate(
+            ['user_id' => $request->user()->id],
+            array_merge($data, ['email' => $request->user()->email])
+        );
+
+        return redirect()->route('pmb.index')->with('success', 'Data diri berhasil disimpan. Anda dapat melanjutkan ke tahap pendaftaran.');
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nama_mahasiswa' => ['required', 'string', 'max:255'],
-            'nik' => ['nullable', 'digits:16'],
-            'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
-            'handphone' => ['nullable', 'string', 'max:20'],
             'period_id' => ['required', Rule::exists('pmb_periods', 'id')->where('is_active', true)],
             'path_id' => ['required', 'exists:pmb_paths,id'],
             'prodi_id' => [
@@ -79,9 +157,14 @@ class PmbController extends Controller
             ],
             'referral_code' => ['nullable', 'string', Rule::exists('pmb_referrals', 'kode_referral')->where('is_active', true)],
         ], [
-            'nik.digits' => 'NIK harus terdiri dari 16 angka.',
             'period_id.exists' => 'Periode pendaftaran tidak aktif atau sudah di luar jadwal.',
         ]);
+
+        $candidate = Candidate::where('user_id', $request->user()->id)->first();
+        $profileFields = ['nama_mahasiswa', 'nik', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'handphone', 'jalan', 'kelurahan'];
+        if (! $candidate || ! collect($profileFields)->every(fn ($field) => filled($candidate->{$field}))) {
+            return back()->withErrors(['profile' => 'Lengkapi dan simpan data diri terlebih dahulu sebelum memilih jalur pendaftaran.']);
+        }
 
         $period = Period::find($data['period_id']);
         if (
@@ -113,17 +196,43 @@ class PmbController extends Controller
             ]);
         }
 
-        $registration = DB::transaction(function () use ($data, $fee) {
-            $candidate = Candidate::updateOrCreate(
-                ['user_id' => auth()->id()],
-                [
-                    'nama_mahasiswa' => $data['nama_mahasiswa'],
-                    'nik' => $data['nik'] ?? null,
-                    'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
-                    'handphone' => $data['handphone'] ?? null,
-                    'email' => auth()->user()->email,
-                ]
-            );
+        $existingRegistration = $candidate->registrations()
+            ->with('payments')
+            ->where('period_id', $data['period_id'])
+            ->first();
+        $changingSelection = $existingRegistration && (
+            (string) $existingRegistration->path_id !== (string) $data['path_id']
+            || (string) $existingRegistration->prodi_id_1 !== (string) $data['prodi_id']
+        );
+        $hadExistingRegistration = (bool) $existingRegistration;
+        if ($changingSelection && (
+            $existingRegistration->status !== 'draft'
+            || $existingRegistration->payments->contains(fn (Payment $payment) => $payment->status !== 'pending' || filled($payment->file_bukti_bayar))
+        )) {
+            return back()->withErrors([
+                'path_id' => 'Pilihan jalur atau program tidak dapat diubah karena pendaftaran atau pembayarannya sudah diproses.',
+            ]);
+        }
+
+        $registration = DB::transaction(function () use ($data, $fee, $candidate, $existingRegistration, $changingSelection) {
+            if ($existingRegistration) {
+                if ($changingSelection) {
+                    $existingRegistration->update([
+                        'path_id' => $data['path_id'],
+                        'prodi_id_1' => $data['prodi_id'],
+                    ]);
+                    $existingRegistration->payments()->updateOrCreate(
+                        ['jenis_tagihan' => 'pendaftaran'],
+                        [
+                            'nominal_tagihan' => $fee->nominal_pendaftaran,
+                            'status' => (float) $fee->nominal_pendaftaran === 0.0 ? 'lunas' : 'pending',
+                            'file_bukti_bayar' => null,
+                            'verified_by' => null,
+                        ]
+                    );
+                }
+                return $existingRegistration;
+            }
 
             $existing = $candidate->registrations()
                 ->where('period_id', $data['period_id'])
@@ -161,7 +270,11 @@ class PmbController extends Controller
 
         return redirect()
             ->route('pmb.index')
-            ->with('success', "Pendaftaran {$registration->nomor_pendaftaran} berhasil dibuat.");
+            ->with('success', $changingSelection
+                ? "Pilihan jalur dan program pada pendaftaran {$registration->nomor_pendaftaran} berhasil diperbarui."
+                : ($hadExistingRegistration
+                    ? "Pendaftaran {$registration->nomor_pendaftaran} sudah tercatat."
+                    : "Pendaftaran {$registration->nomor_pendaftaran} berhasil dibuat."));
     }
 
     public function uploadPaymentProof(Request $request, int $registrationId, int $paymentId)
@@ -216,7 +329,7 @@ class PmbController extends Controller
 
     public function adminSection(Request $request, string $section)
     {
-        $allowed = ['registrations', 'periods', 'paths', 'programs', 'fees', 'referrals'];
+        $allowed = ['registrations', 'periods', 'paths', 'programs', 'fees', 'referrals', 'requirements'];
         abort_unless(in_array($section, $allowed, true), 404);
 
         $user = $request->user();
@@ -253,13 +366,16 @@ class PmbController extends Controller
             return response()->json([
                 'html' => view('admin.pmb.sections.overview', compact('registrationCounts', 'paymentCounts'))->render(),
                 'chart' => [
-                    'labels' => ['Draft', 'Berkas masuk', 'Review', 'Lulus', 'Ditolak'],
+                    'labels' => ['Draft', 'Berkas masuk', 'Review', 'Sudah ujian', 'Lulus', 'Diterima', 'Ditolak', 'Mundur'],
                     'series' => [
                         (int) ($registrationCounts['draft'] ?? 0),
                         (int) ($registrationCounts['berkas_masuk'] ?? 0),
                         (int) ($registrationCounts['review'] ?? 0),
+                        (int) ($registrationCounts['sudah_ujian'] ?? 0),
                         (int) ($registrationCounts['lulus'] ?? 0),
+                        (int) ($registrationCounts['diterima'] ?? 0),
                         (int) ($registrationCounts['ditolak'] ?? 0),
+                        (int) ($registrationCounts['mundur'] ?? 0),
                     ],
                 ],
             ]);
@@ -268,7 +384,7 @@ class PmbController extends Controller
         if ($section === 'registrations') {
             abort_unless($canViewRegistrations, 403);
             $registrations = Registration::with([
-                'candidate.user', 'period', 'path', 'program1', 'payments',
+                'candidate.user', 'period', 'path', 'program1', 'payments', 'documents.requirement',
             ])->latest()->get();
             return response()->json([
                 'html' => view('admin.pmb.sections.registrations', compact('registrations'))->render(),
@@ -300,6 +416,11 @@ class PmbController extends Controller
                 $referrals = Referral::with('owner')->withCount('registrations')->latest()->get();
                 $users = User::orderBy('name')->get(['id', 'name', 'email']);
                 return view('admin.pmb.sections.referrals', compact('referrals', 'users'))->render();
+            })(),
+            'requirements' => (function () {
+                $paths = PmbPath::orderBy('nama_jalur')->get();
+                $requirements = DocumentRequirement::with('path')->orderBy('path_id')->orderBy('nama_dokumen')->get();
+                return view('admin.pmb.sections.requirements', compact('paths', 'requirements'))->render();
             })(),
             default => abort(404),
         };
@@ -392,6 +513,122 @@ class PmbController extends Controller
         $path->delete();
 
         return $this->mutationResponse($request, 'Jalur pendaftaran berhasil dihapus.');
+    }
+
+    public function storeDocumentRequirement(Request $request)
+    {
+        $data = $this->validatedDocumentRequirement($request);
+        DocumentRequirement::create($data);
+        return $this->mutationResponse($request, 'Persyaratan berkas berhasil ditambahkan.');
+    }
+
+    public function updateDocumentRequirement(Request $request, int $requirementId)
+    {
+        $data = $this->validatedDocumentRequirement($request);
+        DocumentRequirement::findOrFail($requirementId)->update($data);
+        return $this->mutationResponse($request, 'Persyaratan berkas berhasil diperbarui.');
+    }
+
+    public function destroyDocumentRequirement(Request $request, int $requirementId)
+    {
+        $requirement = DocumentRequirement::findOrFail($requirementId);
+        if ($requirement->candidateDocuments()->exists()) {
+            return $this->deleteBlocked($request, 'Persyaratan ini sudah memiliki berkas pendaftar sehingga tidak dapat dihapus.');
+        }
+        $requirement->delete();
+        return $this->mutationResponse($request, 'Persyaratan berkas berhasil dihapus.');
+    }
+
+    private function validatedDocumentRequirement(Request $request): array
+    {
+        $data = $request->validate([
+            'path_id' => ['required', 'exists:pmb_paths,id'],
+            'nama_dokumen' => ['required', 'string', 'max:255'],
+            'is_required' => ['nullable', 'boolean'],
+            'format_file' => ['required', 'string', 'max:100'],
+        ]);
+        $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+        $formats = collect(explode(',', strtolower($data['format_file'])))
+            ->map(fn ($format) => ltrim(trim($format), '.'))
+            ->filter(fn ($format) => in_array($format, $allowed, true))->unique()->values();
+        if ($formats->isEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['format_file' => 'Pilih format PDF atau gambar yang didukung (JPG, PNG, WEBP).']);
+        }
+        return [
+            'path_id' => $data['path_id'],
+            'nama_dokumen' => $data['nama_dokumen'],
+            'is_required' => $request->boolean('is_required'),
+            'format_file' => $formats->implode(','),
+        ];
+    }
+
+    public function uploadCandidateDocument(Request $request, int $registrationId, int $requirementId)
+    {
+        $registration = Registration::whereKey($registrationId)
+            ->whereHas('candidate', fn ($query) => $query->where('user_id', auth()->id()))->firstOrFail();
+        $requirement = DocumentRequirement::whereKey($requirementId)->where('path_id', $registration->path_id)->firstOrFail();
+        $allowed = collect(explode(',', strtolower($requirement->format_file)))
+            ->map(fn ($format) => ltrim(trim($format), '.'))
+            ->filter(fn ($format) => in_array($format, ['pdf', 'jpg', 'jpeg', 'png', 'webp'], true))->values();
+        abort_if($allowed->isEmpty(), 422, 'Format unggahan persyaratan belum dikonfigurasi.');
+        $data = $request->validate(['file' => ['required', 'file', 'max:10240', 'mimes:'.$allowed->implode(',')]]);
+        $path = $data['file']->store('pmb/candidate-documents', 'local');
+        $document = CandidateDocument::firstOrNew([
+            'registration_id' => $registration->id,
+            'requirement_id' => $requirement->id,
+        ]);
+        $oldPath = $document->file_path;
+        $document->fill(['file_path' => $path, 'status_verifikasi' => 'pending', 'catatan_admin' => null])->save();
+        if ($oldPath) Storage::disk('local')->delete($oldPath);
+        return redirect()->route('pmb.index')->with('success', 'Berkas berhasil diunggah.');
+    }
+
+    public function downloadCandidateDocument(int $documentId)
+    {
+        $document = CandidateDocument::with('registration.candidate')->findOrFail($documentId);
+        $user = auth()->user();
+        abort_unless(
+            $document->registration?->candidate?->user_id === $user->id
+                || $user->can('pmb-manage') || $user->can('pmb-review') || $user->can('pmb-access'),
+            403
+        );
+        abort_unless(Storage::disk('local')->exists($document->file_path), 404);
+        return Storage::disk('local')->download($document->file_path, basename($document->file_path));
+    }
+
+    public function previewCandidateDocument(int $documentId)
+    {
+        $document = CandidateDocument::with('registration.candidate')->findOrFail($documentId);
+        $user = auth()->user();
+        abort_unless(
+            $document->registration?->candidate?->user_id === $user->id
+                || $user->can('pmb-manage') || $user->can('pmb-review') || $user->can('pmb-access'),
+            403
+        );
+        abort_unless(Storage::disk('local')->exists($document->file_path), 404);
+
+        $mimeType = Storage::disk('local')->mimeType($document->file_path);
+        abort_unless(in_array($mimeType, ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'], true), 415);
+
+        return Storage::disk('local')->response(
+            $document->file_path,
+            basename($document->file_path),
+            ['X-Content-Type-Options' => 'nosniff'],
+            'inline'
+        );
+    }
+
+    public function verifyCandidateDocument(Request $request, int $documentId)
+    {
+        $data = $request->validate([
+            'status_verifikasi' => ['required', Rule::in(['valid', 'invalid'])],
+            'catatan_admin' => ['nullable', 'string', 'max:2000'],
+        ]);
+        CandidateDocument::findOrFail($documentId)->update([
+            'status_verifikasi' => $data['status_verifikasi'],
+            'catatan_admin' => $data['status_verifikasi'] === 'invalid' ? ($data['catatan_admin'] ?? null) : null,
+        ]);
+        return $this->mutationResponse($request, 'Status berkas pendaftar berhasil diperbarui.');
     }
 
     public function updatePeriodStatus(Request $request, int $periodId)
@@ -565,7 +802,7 @@ class PmbController extends Controller
     public function updateRegistrationStatus(Request $request, int $registrationId)
     {
         $data = $request->validate([
-            'status' => ['required', Rule::in(['berkas_masuk', 'review', 'lulus', 'ditolak'])],
+            'status' => ['required', Rule::in(['berkas_masuk', 'review', 'sudah_ujian', 'lulus', 'diterima', 'ditolak', 'mundur'])],
         ]);
 
         Registration::findOrFail($registrationId)->update(['status' => $data['status']]);
@@ -580,7 +817,7 @@ class PmbController extends Controller
             'nik' => ['nullable', 'digits:16'],
             'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
             'handphone' => ['nullable', 'string', 'max:20'],
-            'status' => ['required', Rule::in(['draft', 'berkas_masuk', 'review', 'lulus', 'ditolak'])],
+            'status' => ['required', Rule::in(['draft', 'berkas_masuk', 'review', 'sudah_ujian', 'lulus', 'diterima', 'ditolak', 'mundur'])],
         ]);
 
         $registration = Registration::with('candidate')->findOrFail($registrationId);
