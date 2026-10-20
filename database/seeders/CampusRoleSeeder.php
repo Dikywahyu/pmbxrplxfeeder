@@ -67,6 +67,11 @@ class CampusRoleSeeder extends Seeder
             'payment-create',
             'payment-edit',
             'payment-report',
+            'pmb-access',
+            'pmb-manage',
+            'pmb-review',
+            'pmb-payment-review',
+            'pmb-cbt-manage',
 
             // Modul Penelitian & Pengabdian
             'research-view',
@@ -118,9 +123,9 @@ class CampusRoleSeeder extends Seeder
 
             // Mapping hak akses spesifik
             if (in_array($roleName, ['BAAK', 'Akademik'])) {
-                $rolePermissions = ['academic-view', 'academic-create', 'academic-edit', 'academic-report', 'student-view', 'student-create', 'student-edit'];
+                $rolePermissions = ['academic-view', 'academic-create', 'academic-edit', 'academic-report', 'student-view', 'student-create', 'student-edit', 'pmb-access', 'pmb-manage', 'pmb-review'];
             } elseif ($roleName === 'BAUK') {
-                $rolePermissions = ['payment-view', 'payment-create', 'payment-edit', 'payment-report'];
+                $rolePermissions = ['payment-view', 'payment-create', 'payment-edit', 'payment-report', 'pmb-access', 'pmb-payment-review'];
             } elseif (in_array($roleName, ['Dosen', 'DosenLB', 'Guru Besar'])) {
                 $rolePermissions = ['grade-view', 'grade-create', 'grade-edit', 'academic-view'];
             } elseif (in_array($roleName, ['Kaprodi', 'Kajur', 'Kadep'])) {

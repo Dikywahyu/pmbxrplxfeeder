@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CampusRoleSeeder::class,
+            PmbRoleSeeder::class,
         ]);
     }
 }

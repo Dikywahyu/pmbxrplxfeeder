@@ -6,6 +6,8 @@ use App\Http\Controllers\ApiClientController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\PassportClientController;
+use App\Http\Controllers\PmbController;
+use App\Http\Controllers\CbtController;
 
 use App\Http\Controllers\Kanban\KanbanController;
 
@@ -61,6 +63,11 @@ Route::get('/verify-report/{token}', [ActivityReportController::class, 'verifyDi
 
 Route::get('/approve-report/{token}', [ActivityReportController::class, 'publicApprovalView'])->name('activity_reports.public_approval');
 Route::post('/approve-report/{token}', [ActivityReportController::class, 'publicApprovalSubmit'])->name('activity_reports.public_approval_submit');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', fn () => redirect('/auth/login'));
+    Route::post('/login', [LoginController::class, 'login']);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -196,6 +203,70 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
+Route::middleware(['auth'])->prefix('pmb')->name('pmb.')->group(function () {
+    Route::get('/', [PmbController::class, 'index'])->name('index');
+    Route::get('/exams', [CbtController::class, 'index'])->name('exams.index');
+    Route::post('/exams/{examId}/registrations/{registrationId}/start', [CbtController::class, 'start'])->name('exams.start');
+    Route::get('/exams/attempts/{attemptId}', [CbtController::class, 'take'])->name('exams.take');
+    Route::post('/exams/attempts/{attemptId}', [CbtController::class, 'submit'])->name('exams.submit');
+    Route::get('/exams/attempts/{attemptId}/result', [CbtController::class, 'result'])->name('exams.result');
+    Route::post('/registrations', [PmbController::class, 'store'])->name('registrations.store');
+    Route::post('/registrations/{registrationId}/payments/{paymentId}/proof', [PmbController::class, 'uploadPaymentProof'])
+        ->name('payments.proof');
+    Route::get('/payments/{paymentId}/proof', [PmbController::class, 'downloadPaymentProof'])
+        ->name('payments.download');
+});
+
+Route::prefix('admin/cbt')->name('admin.cbt.')->middleware(['auth', 'verified', '2fa', 'can:pmb-cbt-manage'])->group(function () {
+    Route::get('/', [CbtController::class, 'adminIndex'])->name('index');
+    Route::post('/exams', [CbtController::class, 'storeExam'])->name('exams.store');
+    Route::patch('/exams/{examId}/paths', [CbtController::class, 'updateExamPaths'])->name('exams.paths');
+    Route::patch('/exams/{examId}', [CbtController::class, 'updateExam'])->name('exams.update');
+    Route::delete('/exams/{examId}', [CbtController::class, 'destroyExam'])->name('exams.destroy');
+    Route::get('/exams/{examId}/questions', [CbtController::class, 'questions'])->name('questions.index');
+    Route::post('/exams/{examId}/questions', [CbtController::class, 'storeQuestion'])->name('questions.store');
+    Route::delete('/questions/{questionId}', [CbtController::class, 'destroyQuestion'])->name('questions.destroy');
+    Route::get('/exams/{examId}/attempts', [CbtController::class, 'attempts'])->name('attempts.index');
+    Route::patch('/answers/{answerId}/grade', [CbtController::class, 'gradeAnswer'])->name('answers.grade');
+});
+
+Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', '2fa'])->group(function () {
+    Route::get('/', [PmbController::class, 'adminIndex'])->name('index');
+    Route::get('/section/{section}', [PmbController::class, 'adminSection'])->name('section');
+    Route::get('/data/{section}', [PmbController::class, 'adminData'])->name('data');
+    Route::post('/referrals', [PmbController::class, 'storeReferral'])->middleware('can:pmb-manage')->name('referrals.store');
+    Route::patch('/referrals/{referralId}/status', [PmbController::class, 'updateReferralStatus'])->middleware('can:pmb-manage')->name('referrals.status');
+    Route::delete('/referrals/{referralId}', [PmbController::class, 'destroyReferral'])->middleware('can:pmb-manage')->name('referrals.destroy');
+    Route::post('/periods', [PmbController::class, 'storePeriod'])->middleware('can:pmb-manage')->name('periods.store');
+    Route::put('/periods/{periodId}', [PmbController::class, 'updatePeriod'])->middleware('can:pmb-manage')->name('periods.update');
+    Route::delete('/periods/{periodId}', [PmbController::class, 'destroyPeriod'])->middleware('can:pmb-manage')->name('periods.destroy');
+    Route::patch('/periods/{periodId}/status', [PmbController::class, 'updatePeriodStatus'])
+        ->middleware('can:pmb-manage')
+        ->name('periods.status');
+    Route::post('/paths', [PmbController::class, 'storePath'])->middleware('can:pmb-manage')->name('paths.store');
+    Route::put('/paths/{pathId}', [PmbController::class, 'updatePath'])->middleware('can:pmb-manage')->name('paths.update');
+    Route::delete('/paths/{pathId}', [PmbController::class, 'destroyPath'])->middleware('can:pmb-manage')->name('paths.destroy');
+    Route::post('/programs', [PmbController::class, 'storeProgram'])->middleware('can:pmb-manage')->name('programs.store');
+    Route::put('/programs/{programId}', [PmbController::class, 'updateProgram'])->middleware('can:pmb-manage')->name('programs.update');
+    Route::delete('/programs/{programId}', [PmbController::class, 'destroyProgram'])->middleware('can:pmb-manage')->name('programs.destroy');
+    Route::post('/fees', [PmbController::class, 'storeFee'])->middleware('can:pmb-manage')->name('fees.store');
+    Route::post('/fees/bulk', [PmbController::class, 'storeFeesBulk'])->middleware('can:pmb-manage')->name('fees.bulk');
+    Route::put('/fees/{feeId}', [PmbController::class, 'updateFee'])->middleware('can:pmb-manage')->name('fees.update');
+    Route::delete('/fees/{feeId}', [PmbController::class, 'destroyFee'])->middleware('can:pmb-manage')->name('fees.destroy');
+    Route::patch('/registrations/{registrationId}/status', [PmbController::class, 'updateRegistrationStatus'])
+        ->middleware('can:pmb-review')
+        ->name('registrations.status');
+    Route::put('/registrations/{registrationId}', [PmbController::class, 'updateRegistrationDetails'])
+        ->middleware('can:pmb-registration-manage')
+        ->name('registrations.update');
+    Route::delete('/registrations/{registrationId}', [PmbController::class, 'destroyRegistration'])
+        ->middleware('can:pmb-registration-manage')
+        ->name('registrations.destroy');
+    Route::patch('/payments/{paymentId}', [PmbController::class, 'verifyPayment'])
+        ->middleware('can:pmb-payment-review')
+        ->name('payments.verify');
+});
+
 // Rute yang membutuhkan Login (Untuk Manajemen Pembuatan Link)
 Route::middleware(['auth'])->group(function () {
     Route::resource('short-links', ShortLinkController::class); 
@@ -214,12 +285,14 @@ Route::get('/s/{code}', [ShortLinkController::class, 'handleRedirect'])->name('s
  
 
 Route::get('/', function () {
-    return view('dashboard');
+    $referral = \App\Models\Pmb\Referral::where('owner_id', auth()->id())->where('is_active', true)->first();
+    return view('dashboard', compact('referral'));
 })->middleware(['auth', 'verified', '2fa'])->name('dashboard');
     
 // Halaman Utama setelah lolos semua gerbang keamanan
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $referral = \App\Models\Pmb\Referral::where('owner_id', auth()->id())->where('is_active', true)->first();
+    return view('dashboard', compact('referral'));
 })->middleware(['auth', 'verified', '2fa'])->name('dashboard');
 
 // Route untuk Tampilan (Halaman Kosong)

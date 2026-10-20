@@ -4,88 +4,88 @@
 
 @section('content')
 <div class="row">
-	<div class="col-lg-12 col-xl-8 d-flex align-items-stretch">
-		<div class="card w-100 bg-primary-subtle overflow-hidden shadow-none">
-			<div class="card-body position-relative">
-				<div class="row align-items-center">
-					<div class="col-sm-7">
-						<div class="d-flex align-items-center mb-7">
-							<div class="rounded-circle overflow-hidden me-6 border border-2 border-white shadow-sm">
-								<img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=0085db&color=fff' }}"
-									alt="user-img" width="45" height="45" style="object-fit: cover;">
-							</div>
-							<div>
-								<h5 class="fw-semibold mb-0 fs-5">Selamat datang kembali,</h5>
-								<h5 class="fw-bold mb-0 text-primary">{{ Auth::user()->name }}</h5>
-							</div>
-						</div>
+    <div class="col-lg-12 col-xl-8 d-flex align-items-stretch">
+        <div class="card w-100 bg-primary-subtle overflow-hidden shadow-none">
+            <div class="card-body position-relative">
+                <div class="row align-items-center">
+                    <div class="col-sm-7">
+                        <div class="d-flex align-items-center mb-7">
+                            <div class="rounded-circle overflow-hidden me-6 border border-2 border-white shadow-sm">
+                                <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=0085db&color=fff' }}"
+                                    alt="user-img" width="45" height="45" style="object-fit: cover;">
+                            </div>
+                            <div>
+                                <h5 class="fw-semibold mb-0 fs-5">Selamat datang kembali,</h5>
+                                <h5 class="fw-bold mb-0 text-primary">{{ Auth::user()->name }}</h5>
+                            </div>
+                        </div>
 
-						<div class="d-flex align-items-center mb-4">
-							<div class="border-end pe-4 border-muted border-opacity-20">
-								<h3 class="mb-1 fw-bold fs-8 d-flex align-items-center text-primary" id="liveClock">
-									00:00:00
-								</h3>
-								<p class="mb-0 text-muted fs-2"><i class="ti ti-clock me-1"></i> Waktu Server (WIB)</p>
-							</div>
-							<div class="ps-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="border-end pe-4 border-muted border-opacity-20">
+                                <h3 class="mb-1 fw-bold fs-8 d-flex align-items-center text-primary" id="liveClock">
+                                    00:00:00
+                                </h3>
+                                <p class="mb-0 text-muted fs-2"><i class="ti ti-clock me-1"></i> Waktu Server (WIB)</p>
+                            </div>
+                            <div class="ps-4">
                                 <h3 class="mb-1 fw-semibold fs-5 d-flex align-items-center text-primary text-truncate" style="max-width: 150px;">
                                     {{ request()->header('User-Agent') && str_contains(request()->header('User-Agent'), 'Mobile') ? 'Mobile Device' : 'Desktop Browser' }}
                                 </h3>
                                 <p class="mb-0 text-muted fs-2"><i class="ti ti-device-laptop me-1"></i> Perangkat</p>
                             </div>
-						</div>
+                        </div>
 
-						<div class="d-flex align-items-center gap-2">
-							<span class="badge bg-white text-primary fw-semibold fs-2 shadow-sm">
-								<i class="ti ti-calendar me-1"></i> {{ date('d M Y') }}
-							</span>
-							
-							<span class="badge bg-primary text-white fw-semibold fs-2 shadow-sm">
-								{{ Auth::user()->getRoleNames()->first() ?? 'Unit BAAK' }}
-							</span>
-						</div>
-					</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-white text-primary fw-semibold fs-2 shadow-sm">
+                                <i class="ti ti-calendar me-1"></i> {{ date('d M Y') }}
+                            </span>
 
-					<div class="col-sm-5 d-none d-sm-block">
-						<div class="welcome-bg-img mb-n7 text-end">
-							<img src="{{ asset('dist/assets/images/backgrounds/welcome-bg.svg') }}" alt="welcome-img" class="img-fluid" style="width: 180px;">
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+                            <span class="badge bg-primary text-white fw-semibold fs-2 shadow-sm">
+                                {{ Auth::user()->getRoleNames()->first() ?? 'Unit BAAK' }}
+                            </span>
+                        </div>
+                    </div>
 
-	<div class="col-lg-12 col-xl-4">
+                    <div class="col-sm-5 d-none d-sm-block">
+                        <div class="welcome-bg-img mb-n7 text-end">
+                            <img src="{{ asset('dist/assets/images/backgrounds/welcome-bg.svg') }}" alt="welcome-img" class="img-fluid" style="width: 180px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12 col-xl-4">
         <div class="row">
             <div class="col-sm-6 col-md-3 col-xl-6 d-flex align-items-stretch">
                 <div class="card w-100">
                     <div class="card-body p-4 text-center">
                         <i id="2fa-icon" class="ti {{ Auth::user()->two_factor_enabled ? 'ti-shield-check text-success' : 'ti-shield-x text-danger' }} fs-7 mb-2"></i>
-                        
+
                         <div class="mt-1 mb-2">
-                            <button type="button" id="btn-2fa-toggle" 
-                                    class="btn btn-sm {{ Auth::user()->two_factor_enabled ? 'btn-success' : 'btn-secondary' }} fw-bold px-3 shadow-sm">
+                            <button type="button" id="btn-2fa-toggle"
+                                class="btn btn-sm {{ Auth::user()->two_factor_enabled ? 'btn-success' : 'btn-secondary' }} fw-bold px-3 shadow-sm">
                                 {{ Auth::user()->two_factor_enabled ? '● AKTIF' : '○ OFF' }}
                             </button>
                         </div>
-            
+
                         <p class="mb-0 fs-2 text-muted text-uppercase fw-semibold">2FA Auth</p>
                     </div>
                 </div>
-            </div> 
-    
+            </div>
+
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
             <script>
                 $(document).ready(function() {
                     $('#btn-2fa-toggle').on('click', function() {
                         let isCurrentlyActive = $(this).text().includes('AKTIF');
                         let judulConfirm = isCurrentlyActive ? 'Nonaktifkan 2FA?' : 'Aktifkan 2FA?';
-                        let teksConfirm = isCurrentlyActive 
-                            ? 'Apakah Anda yakin ingin mematikan fitur Dua Faktor Autentikasi?' 
-                            : 'Sistem akan langsung mengaktifkan 2FA menggunakan Kunci Rahasia Anda.';
+                        let teksConfirm = isCurrentlyActive ?
+                            'Apakah Anda yakin ingin mematikan fitur Dua Faktor Autentikasi?' :
+                            'Sistem akan langsung mengaktifkan 2FA menggunakan Kunci Rahasia Anda.';
                         let warnaTombol = isCurrentlyActive ? '#d33' : '#28a745';
-                
+
                         Swal.fire({
                             title: judulConfirm,
                             text: teksConfirm,
@@ -101,7 +101,9 @@
                                 $.ajax({
                                     url: "{{ route('2fa.toggle') }}",
                                     type: "POST",
-                                    data: { _token: "{{ csrf_token() }}" },
+                                    data: {
+                                        _token: "{{ csrf_token() }}"
+                                    },
                                     success: function(response) {
                                         Swal.close();
                                         if (response.status === 'success') {
@@ -112,25 +114,40 @@
                                                 $('#btn-2fa-toggle').removeClass('btn-success').addClass('btn-secondary').text('○ OFF');
                                                 $('#2fa-icon').removeClass('ti-shield-check text-success').addClass('ti-shield-x text-danger');
                                             }
-                                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: response.message, timer: 2000, showConfirmButton: false });
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Berhasil!',
+                                                text: response.message,
+                                                timer: 2000,
+                                                showConfirmButton: false
+                                            });
                                         } else if (response.status === 'redirect') {
-                                            Swal.fire({ icon: 'info', title: 'Setup Diperlukan', text: response.message, confirmButtonText: 'Lanjutkan Ke Setup' }).then(() => {
+                                            Swal.fire({
+                                                icon: 'info',
+                                                title: 'Setup Diperlukan',
+                                                text: response.message,
+                                                confirmButtonText: 'Lanjutkan Ke Setup'
+                                            }).then(() => {
                                                 window.location.href = response.url;
                                             });
                                         }
                                     },
                                     error: function(xhr) {
                                         Swal.close();
-                                        Swal.fire({ icon: 'error', title: 'Oops...', text: 'Terjadi kesalahan sistem, silakan coba lagi nanti.' });
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Oops...',
+                                            text: 'Terjadi kesalahan sistem, silakan coba lagi nanti.'
+                                        });
                                     }
-                                }); 
+                                });
                             }
                         });
                     });
                 });
             </script>
-    
-            
+
+
             <div class="col-sm-6 col-md-3 col-xl-6 d-flex align-items-stretch">
                 <div class="card w-100">
                     <div class="card-body p-4 text-center">
@@ -142,7 +159,7 @@
                     </div>
                 </div>
             </div>
-    
+
             <div class="col-sm-12 col-md-6 col-xl-12 d-flex align-items-stretch">
                 <div class="card w-100">
                     <div class="card-body p-4">
@@ -160,250 +177,203 @@
                     </div>
                 </div>
             </div>
-     
-            
+
+
         </div>
-        
+
     </div>
-    <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-        <div class="card w-100 shadow-sm border-2 bg-light-primary">
-            <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                
-                <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                    <img src="{{ asset('logo-siakad.png') }}" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                </div>
-                
-                <h5 class="fw-semibold mb-2 fs-3 text-dark">SIAKAD CWCU</h5>
-                
-                <a href="https://siakad.cwcu.ac.id/auth/sso/redirect"  target="_blank"  class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                    BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                </a>
-                
-            </div>
-        </div>
-    </div>
-    <div class="row g-3">
-      
-        <!-- SSO -->
-        <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-            <div class="card w-100 shadow-sm border-2 bg-light-primary">
-                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                    <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                        <img src="{{ asset('logo.png') }}" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                    </div>
-                    <h5 class="fw-semibold mb-2 fs-3 text-dark">SSO CWCU</h5>
-                    <a href="https://sso.cwcu.ac.id/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                        BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                    </a>
-                </div>
-            </div>
-        </div>    
-        
-        <!-- SISTER Kemdiktisaintek -->
-        <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-            <div class="card w-100 shadow-sm border-2 bg-light-primary">
-                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                    <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                        <img src="https://sister.kemdiktisaintek.go.id/logo.png" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                    </div>
-                    <h5 class="fw-semibold mb-2 fs-3 text-dark">SISTER Kemdiktisaintek</h5>
-                    <a href="https://sister.kemdiktisaintek.go.id/beranda" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                        BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- BIMA Kemdiktisaintek -->
-        <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-            <div class="card w-100 shadow-sm border-2 bg-light-primary">
-                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                    <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReOGbuLMikrbgBlll4mDygHw7xnTEshN-PtppJfB96iYU8LjKv3xhfgKVl&s=10" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                    </div>
-                    <h5 class="fw-semibold mb-2 fs-3 text-dark">BIMA Kemdiktisaintek</h5>
-                    <a href="https://bima.kemdiktisaintek.go.id/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                        BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    
-        <!-- SINTA -->
-        <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-            <div class="card w-100 shadow-sm border-2 bg-light-primary">
-                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                    <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                        <img src="https://sinta.kemdiktisaintek.go.id/public/assets/img/brand_sinta.png" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                    </div>
-                    <h5 class="fw-semibold mb-2 fs-3 text-dark">SINTA</h5>
-                    <a href="https://sinta.kemdiktisaintek.go.id/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                        BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    
-        <!-- Google Scholar -->
-        <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-            <div class="card w-100 shadow-sm border-2 bg-light-primary">
-                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                    <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Google_Scholar_logo.svg/3840px-Google_Scholar_logo.svg.png" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                    </div>
-                    <h5 class="fw-semibold mb-2 fs-3 text-dark">Google Scholar</h5>
-                    <a href="https://scholar.google.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                        BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    
-        <!-- Garuda Kemdiktisaintek -->
-        <div class="col-sm-6 col-md-3 col-xl-3 d-flex align-items-stretch">
-            <div class="card w-100 shadow-sm border-2 bg-light-primary">
-                <div class="card-body p-4 text-center d-flex flex-column justify-content-center align-items-center">
-                    <div class="p-1 bg-white rounded-circle d-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 98px; height: 98px;">
-                        <img src="https://garuda.kemdiktisaintek.go.id/assets/img/garuda-icon.png" alt="welcome-img" class="img-fluid" style="width: 180px;">
-                    </div>
-                    <h5 class="fw-semibold mb-2 fs-3 text-dark">Garuda Kemdiktisaintek</h5>
-                    <a href="https://garuda.kemdiktisaintek.go.id/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary fw-bold px-3 py-2 shadow-sm text-nowrap rounded-2 fs-2 d-inline-flex align-items-center gap-1">
-                        BUKA Pintasan <i class="ti ti-arrow-up-right fs-3"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    
+
+
+
+
 </div>
+@if(isset($referral) && $referral)
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card border-top border-3 border-primary shadow-sm overflow-hidden">
+            <div class="card-body p-4 p-lg-5 bg-primary-subtle">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-5">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white" style="width:52px;height:52px;">
+                                <i class="ti ti-speakerphone fs-6"></i>
+                            </span>
+                            <div>
+                                <span class="badge bg-primary text-white mb-1">PROGRAM REFERRAL</span>
+                                <h4 class="fw-bold mb-0">Ajak pendaftar baru</h4>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Bagikan link referral Anda. Pendaftar yang mendaftar melalui link ini akan tercatat atas nama Anda.</p>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="small fw-semibold text-muted">KODE ANDA</span>
+                            <span class="badge bg-white text-primary border border-primary-subtle fs-5 px-3 py-2">{{ $referral->kode_referral }}</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        <label class="form-label fw-semibold" for="dashboard-referral-link">Link yang bisa dibagikan</label>
+                        <div class="input-group input-group-lg">
+                            <input type="text" class="form-control bg-white" id="dashboard-referral-link" readonly
+                                value="{{ route('pmb.index', ['ref' => $referral->kode_referral]) }}" aria-label="Link referral Anda">
+                            <button type="button" class="btn btn-primary px-4" id="copy-dashboard-referral">
+                                <i class="ti ti-copy me-1"></i><span>Salin link</span>
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2"><i class="ti ti-info-circle me-1"></i>Kirim link ini melalui WhatsApp atau media sosial.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
 <script>
-	/**
-	 * DASHBOARD UTILITY SCRIPTS
-	 * Mengelola Jam, Cuaca, dan Jadwal Sholat secara Real-time & Dinamis
-	 */
+    const copyReferralButton = document.getElementById('copy-dashboard-referral');
+    copyReferralButton?.addEventListener('click', async () => {
+        const link = document.getElementById('dashboard-referral-link')?.value;
+        try {
+            await navigator.clipboard.writeText(link);
+            const label = copyReferralButton.querySelector('span');
+            if (label) label.textContent = 'Tersalin!';
+            copyReferralButton.classList.replace('btn-primary', 'btn-success');
+            setTimeout(() => {
+                if (label) label.textContent = 'Salin link';
+                copyReferralButton.classList.replace('btn-success', 'btn-primary');
+            }, 1800);
+            if (window.Swal) Swal.fire({ icon: 'success', title: 'Link referral disalin', timer: 1500, showConfirmButton: false });
+        } catch (error) {
+            const input = document.getElementById('dashboard-referral-link');
+            input?.select();
+            document.execCommand('copy');
+            if (window.Swal) Swal.fire({ icon: 'success', title: 'Link referral disalin', timer: 1500, showConfirmButton: false });
+        }
+    });
 
-	// 1. LIVE CLOCK FUNCTION
-	function updateClock() {
-		const now = new Date();
-		const timeString = now.toLocaleTimeString('id-ID', {
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit',
-			hour12: false
-		}).replace(/\./g, ':');
+    /**
+     * DASHBOARD UTILITY SCRIPTS
+     * Mengelola Jam, Cuaca, dan Jadwal Sholat secara Real-time & Dinamis
+     */
 
-		const clockElement = document.getElementById('liveClock');
-		if (clockElement) clockElement.textContent = timeString;
-	}
+    // 1. LIVE CLOCK FUNCTION
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(/\./g, ':');
 
-	// 2. WEATHER FUNCTION (Open-Meteo API)
-	async function fetchWeather(lat = -7.2504, lon = 112.7688) {
-		try {
-			const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-			const data = await response.json();
-			const tempElement = document.getElementById('weather-temp');
-			if (tempElement) tempElement.textContent = Math.round(data.current_weather.temperature) + '°C';
-		} catch (error) {
-			console.error("Gagal memuat data cuaca:", error);
-		}
-	}
+        const clockElement = document.getElementById('liveClock');
+        if (clockElement) clockElement.textContent = timeString;
+    }
 
-	// 3. PRAYER TIMES FUNCTION (Aladhan API - Lebih akurat untuk Koordinat)
-	async function fetchPrayerTimes(lat = -7.2504, lon = 112.7688) {
-		try {
-			// Menggunakan Aladhan API karena mendukung koordinat Lat/Lon secara native
-			const response = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=2`);
-			const data = await response.json();
-			const timings = data.data.timings;
+    // 2. WEATHER FUNCTION (Open-Meteo API)
+    async function fetchWeather(lat = -7.2504, lon = 112.7688) {
+        try {
+            const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+            const data = await response.json();
+            const tempElement = document.getElementById('weather-temp');
+            if (tempElement) tempElement.textContent = Math.round(data.current_weather.temperature) + '°C';
+        } catch (error) {
+            console.error("Gagal memuat data cuaca:", error);
+        }
+    }
 
-			const now = new Date().toLocaleTimeString('id-ID', {
-				hour12: false
-			}).slice(0, 5);
+    // 3. PRAYER TIMES FUNCTION (Aladhan API - Lebih akurat untuk Koordinat)
+    async function fetchPrayerTimes(lat = -7.2504, lon = 112.7688) {
+        try {
+            // Menggunakan Aladhan API karena mendukung koordinat Lat/Lon secara native
+            const response = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=2`);
+            const data = await response.json();
+            const timings = data.data.timings;
 
-			// Daftar waktu sholat untuk dibandingkan
-			const prayers = [{
-					name: 'Subuh',
-					time: timings.Fajr
-				},
-				{
-					name: 'Dzuhur',
-					time: timings.Dhuhr
-				},
-				{
-					name: 'Ashar',
-					time: timings.Asr
-				},
-				{
-					name: 'Maghrib',
-					time: timings.Maghrib
-				},
-				{
-					name: 'Isya',
-					time: timings.Isha
-				}
-			];
+            const now = new Date().toLocaleTimeString('id-ID', {
+                hour12: false
+            }).slice(0, 5);
 
-			// Cari sholat terdekat berikutnya
-			let next = prayers.find(p => p.time > now) || prayers[0];
+            // Daftar waktu sholat untuk dibandingkan
+            const prayers = [{
+                    name: 'Subuh',
+                    time: timings.Fajr
+                },
+                {
+                    name: 'Dzuhur',
+                    time: timings.Dhuhr
+                },
+                {
+                    name: 'Ashar',
+                    time: timings.Asr
+                },
+                {
+                    name: 'Maghrib',
+                    time: timings.Maghrib
+                },
+                {
+                    name: 'Isya',
+                    time: timings.Isha
+                }
+            ];
 
-			document.getElementById('next-prayer-name').textContent = next.name;
-			document.getElementById('next-prayer-time').textContent = next.time;
-		} catch (error) {
-			console.error("Gagal memuat jadwal sholat:", error);
-		}
-	}
+            // Cari sholat terdekat berikutnya
+            let next = prayers.find(p => p.time > now) || prayers[0];
 
-	// 4. CORE LOCATION DETECTION
-	function initDashboardData() {
-		// Jalankan Jam segera
-		setInterval(updateClock, 1000);
-		updateClock();
+            document.getElementById('next-prayer-name').textContent = next.name;
+            document.getElementById('next-prayer-time').textContent = next.time;
+        } catch (error) {
+            console.error("Gagal memuat jadwal sholat:", error);
+        }
+    }
 
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(async (position) => {
-				const lat = position.coords.latitude;
-				const lon = position.coords.longitude;
+    // 4. CORE LOCATION DETECTION
+    function initDashboardData() {
+        // Jalankan Jam segera
+        setInterval(updateClock, 1000);
+        updateClock();
 
-				try {
-					// Reverse Geocoding untuk nama kota
-					const geoResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
-					const geoData = await geoResponse.json();
-					const city = geoData.city || geoData.locality || "Sidoarjo"; // Fallback ke lokasi saat ini
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
 
-					const locElement = document.getElementById('user-location');
-					const descElement = document.getElementById('weather-desc');
+                try {
+                    // Reverse Geocoding untuk nama kota
+                    const geoResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+                    const geoData = await geoResponse.json();
+                    const city = geoData.city || geoData.locality || "Sidoarjo"; // Fallback ke lokasi saat ini
 
-					if (locElement) locElement.textContent = city + " & Sekitarnya";
-					if (descElement) descElement.textContent = city;
+                    const locElement = document.getElementById('user-location');
+                    const descElement = document.getElementById('weather-desc');
 
-					// Update data berdasarkan lokasi user
-					fetchWeather(lat, lon);
-					fetchPrayerTimes(lat, lon);
+                    if (locElement) locElement.textContent = city + " & Sekitarnya";
+                    if (descElement) descElement.textContent = city;
 
-				} catch (error) {
-					console.error("Gagal sinkronisasi lokasi:", error);
-					runDefaultData();
-				}
-			}, (error) => {
-				console.warn("Akses lokasi ditolak, menggunakan lokasi default.");
-				runDefaultData();
-			});
-		} else {
-			runDefaultData();
-		}
-	}
+                    // Update data berdasarkan lokasi user
+                    fetchWeather(lat, lon);
+                    fetchPrayerTimes(lat, lon);
 
-	// Fallback jika GPS mati (Default ke Surabaya sesuai kebutuhan awal Anda)
-	function runDefaultData() {
-		fetchWeather(); // Default Surabaya
-		fetchPrayerTimes(); // Default Surabaya
-	}
+                } catch (error) {
+                    console.error("Gagal sinkronisasi lokasi:", error);
+                    runDefaultData();
+                }
+            }, (error) => {
+                console.warn("Akses lokasi ditolak, menggunakan lokasi default.");
+                runDefaultData();
+            });
+        } else {
+            runDefaultData();
+        }
+    }
 
-	// INITIALIZE ON LOAD
-	document.addEventListener('DOMContentLoaded', initDashboardData);
+    // Fallback jika GPS mati (Default ke Surabaya sesuai kebutuhan awal Anda)
+    function runDefaultData() {
+        fetchWeather(); // Default Surabaya
+        fetchPrayerTimes(); // Default Surabaya
+    }
+
+    // INITIALIZE ON LOAD
+    document.addEventListener('DOMContentLoaded', initDashboardData);
 </script>
 @endpush

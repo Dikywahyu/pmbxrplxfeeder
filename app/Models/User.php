@@ -11,7 +11,9 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles; // Tambahkan ini
 use App\Traits\Hashidable; // Gunakan trait Hashids yang Anda buat
 use App\Models\Apps\Attendance;
+use App\Models\Pmb\Candidate;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 
 class User extends Authenticatable
@@ -88,5 +90,10 @@ class User extends Authenticatable
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'user_id');
+    }
+
+    public function pmbCandidate(): HasOne
+    {
+        return $this->hasOne(Candidate::class, 'user_id');
     }
 }

@@ -2,9 +2,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
-use Illuminate\Support\Facades\View;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+        Gate::before(function (\App\Models\User $user, string $ability) {
+            return $user->hasRole('Super Admin') ? true : null;
+        });
+        Gate::define('pmb-cbt-manage', function (\App\Models\User $user) {
+            $permissions = $user->getAllPermissions()->pluck('name');
+            return $permissions->contains('pmb-manage') || $permissions->contains('pmb-cbt-manage');
+        });
+        Gate::define('pmb-registration-manage', function (\App\Models\User $user) {
+            $permissions = $user->getAllPermissions()->pluck('name');
+            return $permissions->contains('pmb-manage') || $permissions->contains('pmb-registration-manage');
+        });
+
         \Carbon\Carbon::setLocale('id');
         \App\Models\User::observe(\App\Observers\UserObserver::class);
 
@@ -51,28 +64,95 @@ class AppServiceProvider extends ServiceProvider
                     'category' => 'Home',
                     'apps_menu' => true
                 ],
-
-                // --- CATEGORY: PRESENSI & KEGIATAN ---
                 [
-                    'title' => 'Kegiatan & Sesi',
-                    'icon' => 'solar:calendar-mark-line-duotone',
-                    'url' => route('apps.activities.index'), // Mengarah ke route name apps.activities.index
-                    'category' => 'Presensi & Kegiatan',
+                    'title' => 'Pendaftaran PMB',
+                    'icon' => 'solar:document-add-line-duotone',
+                    'url' => route('pmb.index'),
+                    'category' => 'Penerimaan Mahasiswa Baru',
                     'apps_menu' => true,
-                    'active' => request()->is('apps/activities*'),
-                    'permission' => 'activity-list'
+                    'active' => request()->is('pmb*'),
+                ],
+                [
+                    'title' => 'Admin PMB',
+                    'icon' => 'solar:clipboard-check-line-duotone',
+                    'url' => route('admin.pmb.index'),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb'),
+                    'permission' => 'pmb-access',
+                ],
+                [
+                    'title' => 'Pendaftar PMB',
+                    'icon' => 'solar:users-group-rounded-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'registrations']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/registrations'),
+                    'permission' => 'pmb-access',
+                ],
+                [
+                    'title' => 'Periode PMB',
+                    'icon' => 'solar:calendar-date-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'periods']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/periods'),
+                    'permission' => 'pmb-manage',
+                ],
+                [
+                    'title' => 'Jalur Pendaftaran',
+                    'icon' => 'solar:route-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'paths']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/paths'),
+                    'permission' => 'pmb-manage',
+                ],
+                [
+                    'title' => 'Program Studi PMB',
+                    'icon' => 'solar:square-academic-cap-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'programs']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/programs'),
+                    'permission' => 'pmb-manage',
+                ],
+                [
+                    'title' => 'Biaya PMB',
+                    'icon' => 'solar:wallet-money-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'fees']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/fees'),
+                    'permission' => 'pmb-manage',
+                ],
+                [
+                    'title' => 'Marketing & Referral',
+                    'icon' => 'solar:share-circle-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'referrals']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/referrals'),
+                    'permission' => 'pmb-manage',
+                ],
+                [
+                    'title' => 'Ujian CBT',
+                    'icon' => 'solar:clipboard-list-line-duotone',
+                    'url' => route('pmb.exams.index'),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('pmb/exams*'),
+                ],
+                [
+                    'title' => 'Manajemen CBT',
+                    'icon' => 'solar:document-add-line-duotone',
+                    'url' => route('admin.cbt.index'),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/cbt*'),
+                    'permission' => 'pmb-cbt-manage',
                 ],
 
-                // --- CATEGORY: MASTER DATA ---
-                [
-                    'title' => 'Tipe Kegiatan',
-                    'icon' => 'solar:widget-3-line-duotone',
-                    'url' => route('apps.activity-types.index'),
-                    'category' => 'Master Data',
-                    'apps_menu' => true,
-                    'active' => request()->is('apps/activity-types*'),
-                    'permission' => 'activity-type-list'
-                ],
 
                 // --- CATEGORY: ADMINISTRATOR ---
                 [
