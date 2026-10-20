@@ -1,0 +1,32 @@
+# 1. Tabel Master Gelombang/Periode
+php artisan make:migration create_pmb_periods_table --path=database/migrations/Pmb
+
+# 2. Tabel Master Jalur (Reguler, KIP, RPL)
+php artisan make:migration create_pmb_paths_table --path=database/migrations/Pmb
+
+# 3. Tabel Master Program Studi (Bisa skip jika sudah ada tabel prodi bawaan SIAKAD)
+php artisan make:migration create_pmb_study_programs_table --path=database/migrations/Pmb
+
+# 4. Tabel Setting Biaya & SPP (Dinamis berdasarkan Prodi, Jalur, & Periode)
+php artisan make:migration create_pmb_fees_table --path=database/migrations/Pmb
+
+# 5. Tabel Syarat Dokumen (Setting wajib/tidaknya KTP, Ijazah, atau Portofolio per Jalur)
+php artisan make:migration create_pmb_document_requirements_table --path=database/migrations/Pmb
+
+# 6. Tabel Pendaftar (Akun, Data Diri, dan hasil OCR KTP)
+php artisan make:migration create_pmb_candidates_table --path=database/migrations/Pmb
+
+# 7. Tabel Referral (Manajemen kode agen/mahasiswa lama)
+php artisan make:migration create_pmb_referrals_table --path=database/migrations/Pmb
+
+# 8. Tabel Registrasi (Transaksi utama mendaftar ke prodi & jalur tertentu)
+php artisan make:migration create_pmb_registrations_table --path=database/migrations/Pmb
+
+# 9. Tabel File Unggahan (Menyimpan file yang diupload pendaftar sesuai syarat)
+php artisan make:migration create_pmb_candidate_documents_table --path=database/migrations/Pmb
+
+# 10. Tabel Konversi RPL & PKL (Khusus untuk menyimpan ekuivalensi SKS mahasiswa RPL)
+php artisan make:migration create_pmb_rpl_conversions_table --path=database/migrations/Pmb
+
+# 11. Tabel Pembayaran Manual (Menyimpan tagihan, bukti transfer, dan status ACC)
+php artisan make:migration create_pmb_payments_table --path=database/migrations/Pmb
