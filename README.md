@@ -88,6 +88,38 @@ Endpoint API didefinisikan di `routes/api.php` dan umumnya memiliki prefiks `/ap
 
 Periksa konfigurasi autentikasi dan middleware aplikasi sebelum menghubungkan client. Simpan kredensial dan secret integrasi di environment, bukan di repositori.
 
+## Usulan Pengembangan Integrasi PMB
+
+Bagian ini merupakan **rancangan pengembangan**, bukan daftar fitur PMB yang sudah tersedia pada aplikasi saat ini. Integrasi dapat dilakukan bertahap dengan layanan IAM dan API yang sudah ada.
+
+### Pembayaran dan penetapan biaya
+
+- Integrasikan payment gateway seperti Midtrans, Xendit, atau Tripay untuk membuat Virtual Account, QRIS, atau pembayaran melalui gerai ritel. Status pembayaran diperbarui melalui webhook yang diverifikasi.
+- Pertahankan alur transfer manual sebagai fallback, dengan unggah bukti pembayaran dan dashboard verifikasi keuangan untuk menyetujui atau menolak pembayaran.
+- Kaitkan tagihan dengan periode, jalur pendaftaran, dan program studi agar penetapan biaya dapat dikelola secara konsisten.
+
+### Penilaian RPL
+
+- Sediakan matriks pemetaan bukti pengalaman kerja atau sertifikat ke mata kuliah dan SKS pada kurikulum.
+- Pisahkan akses asesor RPL dari role lain, serta sediakan rubrik penilaian dan catatan untuk setiap bukti kompetensi.
+- Simpan keputusan konversi agar dapat ditinjau dan diaudit.
+
+### Verifikasi identitas
+
+- Validasi format NIK dan data tanggal lahir secara lokal sebagai pemeriksaan awal; validasi format tidak membuktikan identitas atau keaslian dokumen.
+- Pertimbangkan OCR melalui Tesseract atau layanan cloud untuk membantu ekstraksi data KTP, dengan konfirmasi pendaftar sebelum data disimpan.
+- Jika diperlukan, tambahkan verifikasi selfie/liveness dan pencocokan foto melalui penyedia yang sesuai. Proses ini perlu memperhatikan persetujuan pengguna, perlindungan data pribadi, dan retensi berkas.
+
+### Referral dan notifikasi
+
+- Sediakan dashboard referral untuk melihat progres pendaftar dari pendaftaran hingga registrasi ulang serta, bila berlaku, status komisi.
+- Integrasikan gateway WhatsApp untuk OTP dan notifikasi status seleksi, tagihan, serta komisi. Pengiriman perlu menggunakan persetujuan penerima dan template pesan yang sesuai.
+
+### Provisioning mahasiswa dan Neo Feeder
+
+- Setelah calon mahasiswa diterima dan menyelesaikan registrasi ulang, siapkan provisioning akun secara terkontrol ke IAM/SSO kampus, dengan mekanisme retry dan pencatatan hasil sinkronisasi.
+- Buat pemetaan data PMB ke format Web Service PDDikti Neo Feeder. Validasi data dan proses sinkronisasi batch sebelum mengirim data, serta simpan status dan respons untuk rekonsiliasi.
+
 ## Pengujian
 
 Jalankan test aplikasi dengan:
