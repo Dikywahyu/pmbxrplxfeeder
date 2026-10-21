@@ -14,6 +14,9 @@
                 {{ $registration->path?->nama_jalur ?? 'Jalur tidak tersedia' }} ·
                 {{ $registration->program1?->nama_prodi ?? 'Program studi tidak tersedia' }}
             </small>
+            @if($registration->nominal_spp !== null)
+                <br><small class="text-primary fw-semibold">SPP/semester: Rp {{ number_format((float) $registration->nominal_spp, 0, ',', '.') }}</small>
+            @endif
         </td>
         <td data-label="Status seleksi">
             @can('pmb-review')

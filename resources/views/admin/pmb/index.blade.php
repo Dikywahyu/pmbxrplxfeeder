@@ -77,6 +77,10 @@
     #pmb-content .marketing-optional-body { padding: .25rem .9rem .9rem; }
     #pmb-content .marketing-stage-tile { min-height: 70px; }
     #pmb-content .marketing-stage-tile .small { min-height: 2.2em; line-height: 1.1; }
+    #pmb-content .pmb-fee-tabs { padding: .35rem; border: 1px solid #e8edf5; border-radius: .9rem; background: #f5f7fc; }
+    #pmb-content .pmb-fee-tabs .nav-link { min-height: 42px; padding: .6rem 1rem; border-radius: .65rem; color: #5b667a; font-weight: 650; white-space: nowrap; }
+    #pmb-content .pmb-fee-tabs .nav-link.active { color: #fff; background: linear-gradient(120deg, #3867ed, #7251d5); box-shadow: 0 4px 12px rgba(71, 92, 211, .2); }
+    #pmb-content .pmb-fee-tabs .nav-link.active .badge { color: #315efb !important; }
     .pmb-status-select { min-width: 145px; border-color: #dce4f0; font-size: .82rem; }
     .pmb-status-select:focus { border-color: #5d87ff; box-shadow: 0 0 0 .2rem rgba(93, 135, 255, .14); }
     @media (max-width: 991.98px) {
@@ -111,6 +115,8 @@
         #pmb-content [data-marketing-registration-form] small { font-size: .68rem; }
         #pmb-content .pmb-marketing-table-wrap { overflow-x: auto; }
         #pmb-content .pmb-marketing-table-wrap table { min-width: 680px; }
+        #pmb-content .pmb-fee-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+        #pmb-content .pmb-fee-tabs .nav-link { padding: .55rem .7rem; font-size: .78rem; }
     }
 </style>
 @endpush
@@ -197,6 +203,17 @@
     </div></div>
 </div>
 
+<div class="modal fade" id="pmb-marketing-spp-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form id="pmb-marketing-spp-form" action="{{ route('admin.pmb.referrals.spp-rates.bulk') }}" method="POST">
+            @csrf
+            <div class="modal-header"><div><h5 class="modal-title">Atur harga SPP marketing</h5><small class="text-muted">Harga diterapkan ke semua prodi pada periode dan jalur terpilih.</small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+            <div class="modal-body" id="pmb-marketing-spp-fields"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Simpan harga</button></div>
+        </form>
+    </div></div>
+</div>
+
 <div class="modal fade" id="pmb-marketing-registration-detail-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
         <div class="modal-header"><div><h5 class="modal-title">Detail pendaftar referral</h5><small class="text-muted">Biodata dan berkas yang sudah diunggah</small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
@@ -218,10 +235,17 @@
     let activeSection = root.dataset.section;
     let chart = null;
     let marketingChart = null;
+    let pathReportChart = null;
     let feeBulkSelection = null;
+    let feeActiveTab = '#pmb-fee-bulk-pane';
+    let referralActiveTab = '#pmb-referrals-marketing-pane';
     const editModal = new bootstrap.Modal(document.getElementById('pmb-edit-modal'));
     const editForm = document.getElementById('pmb-edit-form');
     const editFields = document.getElementById('pmb-edit-fields');
+    const marketingSppModalElement = document.getElementById('pmb-marketing-spp-modal');
+    const marketingSppModal = new bootstrap.Modal(marketingSppModalElement);
+    const marketingSppForm = document.getElementById('pmb-marketing-spp-form');
+    const marketingSppFields = document.getElementById('pmb-marketing-spp-fields');
     const documentModalElement = document.getElementById('pmb-document-review-modal');
     const documentModal = new bootstrap.Modal(documentModalElement);
     const documentReviewForm = document.getElementById('pmb-document-review-form');
@@ -253,6 +277,9 @@
             ['period_id', 'Periode', 'select'], ['path_id', 'Jalur pendaftaran', 'select'],
             ['tanggal_mulai', 'Tanggal mulai jalur', 'date'], ['tanggal_selesai', 'Tanggal tutup jalur', 'date'],
             ['is_active', 'Status jadwal', 'select', [['1', 'Aktif'], ['0', 'Nonaktif']]],
+        ],
+        referralSppRate: [
+            ['nominal_spp', 'Harga SPP khusus (Rp)', 'number'],
         ],
         requirements: [
             ['path_id', 'Jalur pendaftaran', 'select'], ['nama_dokumen', 'Nama berkas', 'text'],
@@ -351,6 +378,12 @@
 
     const loadSection = async (section = activeSection, url = null) => {
         if (!section) return;
+        if (activeSection === 'fees') {
+            feeActiveTab = content.querySelector('.pmb-fee-tabs .nav-link.active')?.dataset.bsTarget || feeActiveTab;
+        }
+        if (activeSection === 'referrals') {
+            referralActiveTab = content.querySelector('.pmb-fee-tabs .nav-link.active')?.dataset.bsTarget || referralActiveTab;
+        }
         activeSection = section;
         content.innerHTML = '<div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2"></span>Memuat data...</div>';
         const endpoint = url || root.dataset.dataUrl.replace('__SECTION__', encodeURIComponent(section));
@@ -367,8 +400,48 @@
         }
         content.innerHTML = result.html;
         initializeTables();
-        if (section === 'fees') setupFeeBulk();
+        if (section === 'fees') {
+            setupFeeBulk();
+            const activeTab = content.querySelector(`.pmb-fee-tabs [data-bs-target="${feeActiveTab}"]`);
+            if (activeTab) bootstrap.Tab.getOrCreateInstance(activeTab).show();
+        }
+        if (section === 'referrals') {
+            const activeTab = content.querySelector(`.pmb-fee-tabs [data-bs-target="${referralActiveTab}"]`);
+            if (activeTab) bootstrap.Tab.getOrCreateInstance(activeTab).show();
+        }
         if (marketingChart) { marketingChart.destroy(); marketingChart = null; }
+        if (pathReportChart) { pathReportChart.destroy(); pathReportChart = null; }
+        if (section === 'fees' && window.ApexCharts) {
+            const target = document.getElementById('pmb-path-registration-chart');
+            const periodFilter = document.getElementById('pmb-path-report-period');
+            if (target && periodFilter) {
+                const pathIds = JSON.parse(target.dataset.pathIds || '[]');
+                const labels = JSON.parse(target.dataset.pathLabels || '[]');
+                const counts = JSON.parse(target.dataset.counts || '{}');
+                periodFilter.value = target.dataset.selectedPeriod || 'all';
+                const getSeries = () => pathIds.map((pathId) => {
+                    if (periodFilter.value === 'all') {
+                        return Object.entries(counts).reduce((sum, [key, total]) => sum + (key.endsWith(`:${pathId}`) ? Number(total) : 0), 0);
+                    }
+                    return Number(counts[`${periodFilter.value}:${pathId}`] || 0);
+                });
+                pathReportChart = new ApexCharts(target, {
+                    chart: { type: 'bar', height: Math.max(230, labels.length * 48), toolbar: { show: false } },
+                    series: [{ name: 'Jumlah pendaftar', data: getSeries() }],
+                    plotOptions: { bar: { horizontal: true, borderRadius: 6, barHeight: '55%', distributed: true, dataLabels: { position: 'right' } } },
+                    dataLabels: { enabled: true, formatter: (value) => Math.round(value), offsetX: 8, style: { colors: ['#344054'] } },
+                    xaxis: { categories: labels, min: 0, forceNiceScale: true, labels: { formatter: (value) => Math.round(value) } },
+                    yaxis: { labels: { maxWidth: 220 } },
+                    grid: { borderColor: '#edf0f7', strokeDashArray: 4 },
+                    colors: ['#5d87ff', '#13deb9', '#ffae1f', '#fa896b', '#a27aff', '#49beff'],
+                    legend: { show: false },
+                    noData: { text: 'Belum ada pendaftar pada jalur ini' },
+                    tooltip: { y: { formatter: (value) => `${Math.round(value)} pendaftar` } },
+                });
+                pathReportChart.render();
+                periodFilter.addEventListener('change', () => pathReportChart?.updateSeries([{ name: 'Jumlah pendaftar', data: getSeries() }]));
+            }
+        }
         if (section === 'marketing' && window.ApexCharts) {
             const target = document.getElementById('pmb-marketing-program-chart');
             if (target) {
@@ -491,6 +564,30 @@
     });
 
     root.addEventListener('click', async (event) => {
+        const marketingSppButton = event.target.closest('[data-marketing-spp-edit]');
+        if (marketingSppButton) {
+            const payload = JSON.parse(marketingSppButton.dataset.payload);
+            marketingSppFields.replaceChildren();
+            const addField = (name, label, type, options = []) => {
+                const wrapper = document.createElement('div'); wrapper.className = 'mb-3';
+                const caption = document.createElement('label'); caption.className = 'form-label'; caption.textContent = label; caption.htmlFor = `marketing-spp-${name}`;
+                const input = document.createElement(type === 'select' ? 'select' : 'input'); input.className = type === 'select' ? 'form-select' : 'form-control'; input.id = caption.htmlFor; input.name = name; input.required = true;
+                if (type === 'number') { input.type = 'number'; input.min = '0'; input.step = '1000'; }
+                if (type === 'select') {
+                    const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = `Pilih ${label.toLowerCase()}`; input.append(placeholder);
+                    options.forEach(([value, text]) => { const option = document.createElement('option'); option.value = value; option.textContent = text; input.append(option); });
+                }
+                wrapper.append(caption, input); marketingSppFields.append(wrapper); return input;
+            };
+            const marketing = document.createElement('div'); marketing.className = 'alert alert-primary py-2'; marketing.textContent = `Marketing: ${payload.marketing_name}`; marketingSppFields.append(marketing);
+            const referral = document.createElement('input'); referral.type = 'hidden'; referral.name = 'referral_id'; referral.value = payload.referral_id; marketingSppFields.append(referral);
+            addField('period_id', 'Periode', 'select', payload.periods);
+            addField('path_id', 'Jalur pendaftaran', 'select', payload.paths);
+            addField('nominal_spp', 'Harga SPP (Rp)', 'number');
+            marketingSppModal.show();
+            return;
+        }
+
         const formToggle = event.target.closest('[data-marketing-form-toggle]');
         if (formToggle) {
             const panel = document.getElementById('marketing-registration-form-panel');
@@ -775,6 +872,15 @@
         });
     });
 
+    root.addEventListener('shown.bs.tab', (event) => {
+        if (!['fees', 'referrals'].includes(activeSection) || !window.jQuery || !$.fn.dataTable) return;
+        window.setTimeout(() => {
+            $(content).find('.tab-pane.active .pmb-data-table').each(function () {
+                if ($.fn.dataTable.isDataTable(this)) $(this).DataTable().columns.adjust().draw(false);
+            });
+        }, 0);
+    });
+
     if (documentReviewForm) {
         documentReviewForm.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -809,6 +915,30 @@
             }
         });
     }
+
+    marketingSppForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submit = marketingSppForm.querySelector('[type="submit"]'); submit.disabled = true;
+        try {
+            const response = await fetch(marketingSppForm.action, {
+                method: 'POST', body: new FormData(marketingSppForm),
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const errors = Object.values(result.errors || {}).flat();
+                throw new Error(errors.join(' ') || result.message || 'Harga SPP gagal disimpan.');
+            }
+            marketingSppModal.hide();
+            await loadSection();
+            referralActiveTab = '#pmb-referrals-spp-pane';
+            const sppTab = content.querySelector('.pmb-fee-tabs [data-bs-target="#pmb-referrals-spp-pane"]');
+            if (sppTab) bootstrap.Tab.getOrCreateInstance(sppTab).show();
+            message(result.message || 'Harga SPP marketing berhasil disimpan.');
+        } catch (error) { message(error.message || 'Harga SPP gagal disimpan.', true); }
+        finally { submit.disabled = false; }
+    });
 
     editForm.addEventListener('submit', async (event) => {
         event.preventDefault();

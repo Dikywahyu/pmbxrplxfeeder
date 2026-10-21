@@ -188,10 +188,10 @@
                                 <select class="form-select mb-2" data-admission-choice required>
                                     <option value="">Pilih periode dan program studi</option>
                                     @foreach($card['options'] as $option)
-                                    <option value="{{ $option['period_id'] }}|{{ $option['program_id'] }}" data-period="{{ $option['period_id'] }}" data-program="{{ $option['program_id'] }}" data-amount="{{ $option['amount'] }}" @selected($selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id'] && (string) $selectedRegistration->prodi_id_1 === (string) $option['program_id'])>{{ $option['period_name'] }} ({{ $option['schedule_start'] }}–{{ $option['schedule_end'] }}) · {{ $option['program_name'] }}</option>
+                                    <option value="{{ $option['period_id'] }}|{{ $option['program_id'] }}" data-period="{{ $option['period_id'] }}" data-program="{{ $option['program_id'] }}" data-amount="{{ $option['amount'] }}" data-spp="{{ $option['amount_spp'] }}" @selected($selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id'] && (string) $selectedRegistration->prodi_id_1 === (string) $option['program_id'])>{{ $option['period_name'] }} ({{ $option['schedule_start'] }}–{{ $option['schedule_end'] }}) · {{ $option['program_name'] }}</option>
                                     @endforeach
                                 </select>
-                                <div class="alert alert-info py-2 small mb-3" data-admission-fee>Pilih program untuk melihat biaya pendaftaran.</div>
+                                <div class="alert alert-info py-2 small mb-3" data-admission-fee>Pilih program untuk melihat biaya pendaftaran dan SPP per semester.</div>
                                 <button class="btn btn-primary w-100" type="submit" @disabled(!$profileComplete)>{{ $profileComplete ? 'Daftar melalui jalur ini' : 'Lengkapi biodata terlebih dahulu' }}</button>
                             </form>
                         </div>
@@ -228,6 +228,9 @@
                                     {{ $registration->path?->nama_jalur ?? 'Jalur tidak tersedia' }} ·
                                     {{ $registration->program1?->nama_prodi ?? 'Program studi tidak tersedia' }}
                                 </span>
+                                @if($registration->nominal_spp !== null)
+                                <div class="small text-muted mt-1">SPP per semester: <strong class="text-dark">Rp {{ number_format((float) $registration->nominal_spp, 0, ',', '.') }}</strong></div>
+                                @endif
                             </div>
                             <span class="badge bg-primary-subtle text-primary align-self-start">{{ str_replace('_', ' ', ucfirst($registration->status)) }}</span>
                         </div>
@@ -330,8 +333,8 @@
                 period.value = option?.dataset.period ?? '';
                 program.value = option?.dataset.program ?? '';
                 feeLabel.textContent = option?.dataset.amount ?
-                    `Biaya pendaftaran: Rp ${new Intl.NumberFormat('id-ID').format(Number(option.dataset.amount))}` :
-                    'Pilih program untuk melihat biaya pendaftaran.';
+                    `Biaya pendaftaran: Rp ${new Intl.NumberFormat('id-ID').format(Number(option.dataset.amount))} · SPP per semester: Rp ${new Intl.NumberFormat('id-ID').format(Number(option.dataset.spp || 0))}` :
+                    'Pilih program untuk melihat biaya pendaftaran dan SPP per semester.';
             });
             if (choice.value) choice.dispatchEvent(new Event('change'));
         });

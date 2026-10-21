@@ -11,6 +11,7 @@ use App\Models\Pmb\Fee;
 use App\Models\Pmb\Payment;
 use App\Models\Pmb\PeriodPathSchedule;
 use App\Models\Pmb\Referral;
+use App\Models\Pmb\ReferralSppRate;
 use App\Models\Pmb\Registration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -245,7 +246,11 @@ class PmbMarketingController extends Controller
         }
 
         $expiresAt = now()->addDays(14);
-        [$registration, $token] = DB::transaction(function () use ($data, $fee, $referral, $request, $expiresAt, $uploadedFiles) {
+        $nominalSpp = ReferralSppRate::where('referral_id', $referral->id)
+            ->where('fee_id', $fee->id)
+            ->value('nominal_spp') ?? $fee->nominal_spp;
+
+        [$registration, $token] = DB::transaction(function () use ($data, $fee, $referral, $request, $expiresAt, $uploadedFiles, $nominalSpp) {
             $candidateData = $data;
             unset($candidateData['fee_id']);
             $candidate = Candidate::create($candidateData);
@@ -261,6 +266,7 @@ class PmbMarketingController extends Controller
                 'referral_id' => $referral->id,
                 'path_id' => $fee->path_id,
                 'prodi_id_1' => $fee->program_id,
+                'nominal_spp' => $nominalSpp,
                 'nomor_pendaftaran' => $registrationNumber,
                 'status' => 'draft',
             ]);

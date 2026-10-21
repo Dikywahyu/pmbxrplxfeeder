@@ -13,6 +13,11 @@ class Registration extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return ['nominal_spp' => 'decimal:2'];
+    }
+
     public function candidate(): BelongsTo
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');

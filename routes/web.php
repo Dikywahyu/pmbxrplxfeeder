@@ -143,6 +143,10 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::put('/requirements/{requirementId}', [PmbController::class, 'updateDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.update');
     Route::delete('/requirements/{requirementId}', [PmbController::class, 'destroyDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.destroy');
     Route::post('/referrals', [PmbController::class, 'storeReferral'])->middleware('can:pmb-manage')->name('referrals.store');
+    Route::post('/referrals/spp-rates', [PmbController::class, 'saveReferralSppRate'])->middleware('can:pmb-manage')->name('referrals.spp-rates.store');
+    Route::post('/referrals/spp-rates/bulk', [PmbController::class, 'saveReferralSppRatesBulk'])->middleware('can:pmb-manage')->name('referrals.spp-rates.bulk');
+    Route::put('/referrals/spp-rates/{rateId}', [PmbController::class, 'updateReferralSppRate'])->middleware('can:pmb-manage')->name('referrals.spp-rates.update');
+    Route::delete('/referrals/spp-rates/{rateId}', [PmbController::class, 'destroyReferralSppRate'])->middleware('can:pmb-manage')->name('referrals.spp-rates.destroy');
     Route::patch('/referrals/{referralId}/status', [PmbController::class, 'updateReferralStatus'])->middleware('can:pmb-manage')->name('referrals.status');
     Route::delete('/referrals/{referralId}', [PmbController::class, 'destroyReferral'])->middleware('can:pmb-manage')->name('referrals.destroy');
     Route::post('/periods', [PmbController::class, 'storePeriod'])->middleware('can:pmb-manage')->name('periods.store');

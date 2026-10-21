@@ -12,6 +12,7 @@ use App\Models\Pmb\Period;
 use App\Models\Pmb\PeriodPathSchedule;
 use App\Models\Pmb\Registration;
 use App\Models\Pmb\Referral;
+use App\Models\Pmb\ReferralSppRate;
 use App\Models\Pmb\StudyProgram;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PmbController extends Controller
 {
@@ -47,7 +49,12 @@ class PmbController extends Controller
         $fees = Fee::with(['period', 'path', 'program'])
             ->get()
             ->keyBy(fn (Fee $fee) => "{$fee->period_id}:{$fee->path_id}:{$fee->program_id}");
-        $admissionCards = $paths->map(function (PmbPath $path) use ($periods, $programs, $fees, $openPathSchedules) {
+        $pricingReferral = Referral::where('kode_referral', $request->session()->get('pmb_referral_code'))
+            ->where('is_active', true)->first();
+        $referralSppRates = $pricingReferral
+            ? ReferralSppRate::where('referral_id', $pricingReferral->id)->pluck('nominal_spp', 'fee_id')
+            : collect();
+        $admissionCards = $paths->map(function (PmbPath $path) use ($periods, $programs, $fees, $openPathSchedules, $referralSppRates) {
             $options = collect();
             foreach ($periods as $period) {
                 $schedule = $openPathSchedules->get("{$period->id}:{$path->id}");
@@ -65,6 +72,7 @@ class PmbController extends Controller
                             'program_id' => $program->id,
                             'program_name' => $program->nama_prodi.' ('.$program->jenjang.')',
                             'amount' => (float) $fee->nominal_pendaftaran,
+                            'amount_spp' => (float) ($referralSppRates->get($fee->id) ?? $fee->nominal_spp),
                         ]);
                     }
                 }
@@ -209,6 +217,15 @@ class PmbController extends Controller
             ]);
         }
 
+        $referralCode = $data['referral_code'] ?? $request->session()->get('pmb_referral_code');
+        $pricingReferral = $referralCode
+            ? Referral::where('kode_referral', $referralCode)->where('is_active', true)->first()
+            : null;
+        $nominalSpp = $pricingReferral
+            ? ReferralSppRate::where('referral_id', $pricingReferral->id)->where('fee_id', $fee->id)->value('nominal_spp')
+            : null;
+        $nominalSpp = $nominalSpp ?? $fee->nominal_spp;
+
         $pathSchedule = PeriodPathSchedule::where('period_id', $data['period_id'])
             ->where('path_id', $data['path_id'])
             ->where('is_active', true)
@@ -239,12 +256,13 @@ class PmbController extends Controller
             ]);
         }
 
-        $registration = DB::transaction(function () use ($data, $fee, $candidate, $existingRegistration, $changingSelection) {
+        $registration = DB::transaction(function () use ($data, $fee, $candidate, $existingRegistration, $changingSelection, $nominalSpp, $pricingReferral) {
             if ($existingRegistration) {
                 if ($changingSelection) {
                     $existingRegistration->update([
                         'path_id' => $data['path_id'],
                         'prodi_id_1' => $data['prodi_id'],
+                        'nominal_spp' => $nominalSpp,
                     ]);
                     $existingRegistration->payments()->updateOrCreate(
                         ['jenis_tagihan' => 'pendaftaran'],
@@ -274,12 +292,9 @@ class PmbController extends Controller
                 'prodi_id_1' => $data['prodi_id'],
                 'nomor_pendaftaran' => 'PMB-'.now()->format('Y').'-'.Str::upper(Str::random(8)),
                 'status' => 'draft',
-                'referral_id' => ! empty($data['referral_code'])
-                    ? Referral::where('kode_referral', $data['referral_code'])->where('is_active', true)->value('id')
-                    : null,
-                'referral_by' => ! empty($data['referral_code'])
-                    ? Referral::where('kode_referral', $data['referral_code'])->where('is_active', true)->value('owner_id')
-                    : null,
+                'nominal_spp' => $nominalSpp,
+                'referral_id' => $pricingReferral?->id,
+                'referral_by' => $pricingReferral?->owner_id,
             ]);
 
             $registration->payments()->create([
@@ -488,13 +503,25 @@ class PmbController extends Controller
                     ->orderBy('period_id')->orderBy('path_id')->get();
                 $schedules = PeriodPathSchedule::with(['period', 'path'])
                     ->orderByDesc('period_id')->orderBy('path_id')->get();
+                $registrationCounts = Registration::query()
+                    ->select('period_id', 'path_id', DB::raw('count(*) as total'))
+                    ->groupBy('period_id', 'path_id')
+                    ->get()
+                    ->mapWithKeys(fn ($row) => ["{$row->period_id}:{$row->path_id}" => (int) $row->total]);
 
-                return view('admin.pmb.sections.fees', compact('periods', 'paths', 'programs', 'fees', 'schedules'))->render();
+                return view('admin.pmb.sections.fees', compact(
+                    'periods', 'paths', 'programs', 'fees', 'schedules', 'registrationCounts'
+                ))->render();
             })(),
             'referrals' => (function () {
-                $referrals = Referral::with('owner')->withCount('registrations')->latest()->get();
+                $referrals = Referral::with('owner')->withCount(['registrations', 'sppRates'])->latest()->get();
                 $users = User::orderBy('name')->get(['id', 'name', 'email']);
-                return view('admin.pmb.sections.referrals', compact('referrals', 'users'))->render();
+                $fees = Fee::with(['period', 'path', 'program'])->orderBy('period_id')->orderBy('path_id')->get();
+                $periods = Period::orderByDesc('tanggal_mulai')->get();
+                $paths = PmbPath::orderBy('nama_jalur')->get();
+                $sppRates = ReferralSppRate::with(['referral.owner', 'fee.period', 'fee.path', 'fee.program'])
+                    ->latest()->get();
+                return view('admin.pmb.sections.referrals', compact('referrals', 'users', 'fees', 'periods', 'paths', 'sppRates'))->render();
             })(),
             'requirements' => (function () {
                 $paths = PmbPath::orderBy('nama_jalur')->get();
@@ -802,6 +829,67 @@ class PmbController extends Controller
         Referral::create(['owner_id' => $data['owner_id'], 'kode_referral' => $code, 'is_active' => true]);
 
         return $this->mutationResponse($request, 'Kode referral marketing berhasil dibuat.');
+    }
+
+    public function saveReferralSppRate(Request $request)
+    {
+        $data = $request->validate([
+            'referral_id' => ['required', 'exists:pmb_referrals,id'],
+            'fee_id' => ['required', 'exists:pmb_fees,id'],
+            'nominal_spp' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        ReferralSppRate::updateOrCreate(
+            ['referral_id' => $data['referral_id'], 'fee_id' => $data['fee_id']],
+            ['nominal_spp' => $data['nominal_spp']]
+        );
+
+        return $this->mutationResponse($request, 'Harga SPP khusus marketing berhasil disimpan.');
+    }
+
+    public function updateReferralSppRate(Request $request, int $rateId)
+    {
+        $data = $request->validate([
+            'nominal_spp' => ['required', 'numeric', 'min:0'],
+        ]);
+        ReferralSppRate::findOrFail($rateId)->update($data);
+
+        return $this->mutationResponse($request, 'Harga SPP khusus berhasil diperbarui.');
+    }
+
+    public function saveReferralSppRatesBulk(Request $request)
+    {
+        $data = $request->validate([
+            'referral_id' => ['required', 'exists:pmb_referrals,id'],
+            'period_id' => ['required', 'exists:pmb_periods,id'],
+            'path_id' => ['required', 'exists:pmb_paths,id'],
+            'nominal_spp' => ['required', 'numeric', 'min:0'],
+        ]);
+        $fees = Fee::where('period_id', $data['period_id'])
+            ->where('path_id', $data['path_id'])->get();
+        if ($fees->isEmpty()) {
+            throw ValidationException::withMessages([
+                'period_id' => 'Belum ada konfigurasi biaya untuk periode dan jalur tersebut. Atur biaya PMB terlebih dahulu.',
+            ]);
+        }
+
+        DB::transaction(function () use ($data, $fees) {
+            foreach ($fees as $fee) {
+                ReferralSppRate::updateOrCreate(
+                    ['referral_id' => $data['referral_id'], 'fee_id' => $fee->id],
+                    ['nominal_spp' => $data['nominal_spp']]
+                );
+            }
+        });
+
+        return $this->mutationResponse($request, "Harga SPP berhasil diterapkan ke {$fees->count()} program studi.");
+    }
+
+    public function destroyReferralSppRate(Request $request, int $rateId)
+    {
+        ReferralSppRate::findOrFail($rateId)->delete();
+
+        return $this->mutationResponse($request, 'Harga khusus dihapus. Pendaftar berikutnya kembali memakai harga SPP standar.');
     }
 
     public function updateReferralStatus(Request $request, int $referralId)

@@ -18,6 +18,7 @@
         'Periode' => $registration->period?->nama_periode,
         'Jalur' => $registration->path?->nama_jalur,
         'Program studi' => $registration->program1?->nama_prodi,
+        'SPP per semester' => $registration->nominal_spp !== null ? 'Rp '.number_format((float) $registration->nominal_spp, 0, ',', '.') : null,
         'Nomor pendaftaran' => $registration->nomor_pendaftaran,
     ];
     $family = [

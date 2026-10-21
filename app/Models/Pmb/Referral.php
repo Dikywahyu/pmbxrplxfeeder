@@ -27,4 +27,9 @@ class Referral extends Model
     {
         return $this->hasMany(Registration::class, 'referral_id');
     }
+
+    public function sppRates(): HasMany
+    {
+        return $this->hasMany(ReferralSppRate::class, 'referral_id');
+    }
 }
