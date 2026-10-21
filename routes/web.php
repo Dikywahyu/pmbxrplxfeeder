@@ -159,6 +159,8 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::delete('/programs/{programId}', [PmbController::class, 'destroyProgram'])->middleware('can:pmb-manage')->name('programs.destroy');
     Route::post('/fees', [PmbController::class, 'storeFee'])->middleware('can:pmb-manage')->name('fees.store');
     Route::post('/fees/bulk', [PmbController::class, 'storeFeesBulk'])->middleware('can:pmb-manage')->name('fees.bulk');
+    Route::post('/period-path-schedules', [PmbController::class, 'savePeriodPathSchedule'])->middleware('can:pmb-manage')->name('schedules.save');
+    Route::put('/period-path-schedules', [PmbController::class, 'savePeriodPathSchedule'])->middleware('can:pmb-manage')->name('schedules.update');
     Route::put('/fees/{feeId}', [PmbController::class, 'updateFee'])->middleware('can:pmb-manage')->name('fees.update');
     Route::delete('/fees/{feeId}', [PmbController::class, 'destroyFee'])->middleware('can:pmb-manage')->name('fees.destroy');
     Route::patch('/registrations/{registrationId}/status', [PmbController::class, 'updateRegistrationStatus'])

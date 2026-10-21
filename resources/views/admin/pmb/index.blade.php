@@ -249,6 +249,11 @@
             ['period_id', 'Periode', 'select'], ['path_id', 'Jalur', 'select'], ['program_id', 'Program studi', 'select'],
             ['nominal_pendaftaran', 'Biaya pendaftaran (Rp)', 'number'], ['nominal_spp', 'SPP (Rp)', 'number'],
         ],
+        schedule: [
+            ['period_id', 'Periode', 'select'], ['path_id', 'Jalur pendaftaran', 'select'],
+            ['tanggal_mulai', 'Tanggal mulai jalur', 'date'], ['tanggal_selesai', 'Tanggal tutup jalur', 'date'],
+            ['is_active', 'Status jadwal', 'select', [['1', 'Aktif'], ['0', 'Nonaktif']]],
+        ],
         requirements: [
             ['path_id', 'Jalur pendaftaran', 'select'], ['nama_dokumen', 'Nama berkas', 'text'],
             ['is_required', 'Wajib diunggah', 'select', [['1', 'Ya'], ['0', 'Tidak']]],
@@ -511,6 +516,10 @@
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Detail pendaftar gagal dimuat.');
                 marketingDetailBody.innerHTML = result.html;
+                if (registrationDetailButton.dataset.focusTab) {
+                    const tab = marketingDetailBody.querySelector(`#${registrationDetailButton.dataset.focusTab}-tab`);
+                    if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+                }
             } catch (error) {
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-danger mb-0';
@@ -595,7 +604,7 @@
             const payload = JSON.parse(editButton.dataset.payload);
             editForm.action = editButton.dataset.updateUrl;
             editFields.replaceChildren();
-            (schemas[activeSection] || []).forEach(([name, label, type, choices]) => {
+            (schemas[editButton.dataset.editSchema || activeSection] || []).forEach(([name, label, type, choices]) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'mb-3';
                 const caption = document.createElement('label');

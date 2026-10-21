@@ -26,6 +26,34 @@
     </form>
 </div></div>
 
+<div class="card border mb-4">
+    <div class="card-header bg-transparent"><h5 class="card-title mb-1">Jadwal pembukaan per jalur</h5><small class="text-muted">Atur tanggal buka dan tutup untuk setiap kombinasi periode dan jalur. Pendaftar hanya dapat memilih jalur saat periode dan jadwal jalurnya sama-sama aktif.</small></div>
+    <div class="card-body">
+        <form method="POST" action="{{ route('admin.pmb.schedules.save') }}" data-ajax-form class="row g-3 align-items-end mb-4">
+            @csrf
+            <div class="col-12 col-md-3"><label class="form-label" for="schedule-period">Periode</label><select class="form-select" id="schedule-period" name="period_id" required>@include('admin.pmb.partials.period-options')</select></div>
+            <div class="col-12 col-md-3"><label class="form-label" for="schedule-path">Jalur</label><select class="form-select" id="schedule-path" name="path_id" required>@include('admin.pmb.partials.path-options')</select></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="schedule-start">Mulai dibuka</label><input class="form-control" id="schedule-start" type="date" name="tanggal_mulai" required></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="schedule-end">Tutup pendaftaran</label><input class="form-control" id="schedule-end" type="date" name="tanggal_selesai" required></div>
+            <div class="col-6 col-md-1"><label class="form-label" for="schedule-active">Status</label><select class="form-select" id="schedule-active" name="is_active" required><option value="1">Aktif</option><option value="0">Nonaktif</option></select></div>
+            <div class="col-6 col-md-1"><button class="btn btn-primary w-100" type="submit"><i class="ti ti-device-floppy"></i></button></div>
+        </form>
+        <div class="table-responsive"><table class="table table-sm table-hover align-middle w-100 pmb-data-table">
+            <thead class="table-light"><tr><th>Periode</th><th>Jalur</th><th>Jadwal pembukaan</th><th>Status</th><th data-orderable="false" data-searchable="false">Aksi</th></tr></thead><tbody>
+                @foreach($schedules as $schedule)
+                    <tr>
+                        <td>{{ $schedule->period?->nama_periode }}</td><td>{{ $schedule->path?->nama_jalur }}</td>
+                        <td>{{ $schedule->tanggal_mulai->format('d/m/Y') }} – {{ $schedule->tanggal_selesai->format('d/m/Y') }}</td>
+                        <td><span class="badge {{ $schedule->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">{{ $schedule->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
+                        <td><button type="button" class="btn btn-sm btn-light-primary text-primary" data-pmb-edit data-edit-schema="schedule" data-update-url="{{ route('admin.pmb.schedules.update') }}" data-payload="{{ json_encode(['record' => ['period_id' => (string) $schedule->period_id, 'path_id' => (string) $schedule->path_id, 'tanggal_mulai' => $schedule->tanggal_mulai->format('Y-m-d'), 'tanggal_selesai' => $schedule->tanggal_selesai->format('Y-m-d'), 'is_active' => $schedule->is_active ? '1' : '0'], 'options' => ['period_id' => $periods->map(fn($item) => [(string) $item->id, $item->nama_periode])->values(), 'path_id' => $paths->map(fn($item) => [(string) $item->id, $item->nama_jalur])->values()]]) }}"><i class="ti ti-edit"></i> Ubah jadwal</button></td>
+                    </tr>
+                @endforeach
+                @if($schedules->isEmpty())<tr><td colspan="5" class="text-center text-muted">Belum ada jadwal jalur. Simpan biaya jalur terlebih dahulu, lalu atur jadwalnya di atas.</td></tr>@endif
+            </tbody>
+        </table></div>
+    </div>
+</div>
+
 <div class="card border mb-0"><div class="card-header bg-transparent"><h5 class="card-title mb-0">Daftar biaya</h5><small class="text-muted">Edit atau hapus satu kombinasi biaya dari tabel ini.</small></div><div class="card-body">
     <div class="table-responsive"><table class="table table-sm table-hover align-middle w-100 pmb-data-table"><thead class="table-light"><tr><th>Periode</th><th>Jalur</th><th>Program studi</th><th>Pendaftaran</th><th>SPP</th><th class="text-end" data-orderable="false" data-searchable="false">Aksi</th></tr></thead><tbody>
         @foreach($fees as $fee)

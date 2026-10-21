@@ -9,6 +9,7 @@ use App\Models\Pmb\Fee;
 use App\Models\Pmb\Payment;
 use App\Models\Pmb\Path as PmbPath;
 use App\Models\Pmb\Period;
+use App\Models\Pmb\PeriodPathSchedule;
 use App\Models\Pmb\Registration;
 use App\Models\Pmb\Referral;
 use App\Models\Pmb\StudyProgram;
@@ -35,20 +36,32 @@ class PmbController extends Controller
             ->whereDate('tanggal_selesai', '>=', today())
             ->orderBy('tanggal_mulai')
             ->get();
+        $openPathSchedules = PeriodPathSchedule::query()
+            ->where('is_active', true)
+            ->whereDate('tanggal_mulai', '<=', today())
+            ->whereDate('tanggal_selesai', '>=', today())
+            ->get()
+            ->keyBy(fn ($schedule) => "{$schedule->period_id}:{$schedule->path_id}");
         $paths = PmbPath::orderBy('nama_jalur')->get();
         $programs = StudyProgram::where('is_active', true)->orderBy('nama_prodi')->get();
         $fees = Fee::with(['period', 'path', 'program'])
             ->get()
             ->keyBy(fn (Fee $fee) => "{$fee->period_id}:{$fee->path_id}:{$fee->program_id}");
-        $admissionCards = $paths->map(function (PmbPath $path) use ($periods, $programs, $fees) {
+        $admissionCards = $paths->map(function (PmbPath $path) use ($periods, $programs, $fees, $openPathSchedules) {
             $options = collect();
             foreach ($periods as $period) {
+                $schedule = $openPathSchedules->get("{$period->id}:{$path->id}");
+                if (! $schedule) {
+                    continue;
+                }
                 foreach ($programs as $program) {
                     $fee = $fees->get("{$period->id}:{$path->id}:{$program->id}");
                     if ($fee) {
                         $options->push([
                             'period_id' => $period->id,
                             'period_name' => $period->nama_periode,
+                            'schedule_start' => $schedule->tanggal_mulai->format('d/m/Y'),
+                            'schedule_end' => $schedule->tanggal_selesai->format('d/m/Y'),
                             'program_id' => $program->id,
                             'program_name' => $program->nama_prodi.' ('.$program->jenjang.')',
                             'amount' => (float) $fee->nominal_pendaftaran,
@@ -193,6 +206,18 @@ class PmbController extends Controller
         if (! $fee) {
             return back()->withInput()->withErrors([
                 'prodi_id' => 'Biaya untuk periode, jalur, dan program studi yang dipilih belum tersedia.',
+            ]);
+        }
+
+        $pathSchedule = PeriodPathSchedule::where('period_id', $data['period_id'])
+            ->where('path_id', $data['path_id'])
+            ->where('is_active', true)
+            ->whereDate('tanggal_mulai', '<=', today())
+            ->whereDate('tanggal_selesai', '>=', today())
+            ->first();
+        if (! $pathSchedule) {
+            return back()->withInput()->withErrors([
+                'path_id' => 'Jadwal pendaftaran untuk jalur ini belum dibuka atau sudah ditutup.',
             ]);
         }
 
@@ -360,9 +385,16 @@ class PmbController extends Controller
                 ->whereHas('period', fn ($query) => $query->where('is_active', true)
                     ->whereDate('tanggal_mulai', '<=', today())
                     ->whereDate('tanggal_selesai', '>=', today()))
+                ->whereExists(fn ($query) => $query->selectRaw('1')
+                    ->from('pmb_period_path_schedules as schedules')
+                    ->whereColumn('schedules.period_id', 'pmb_fees.period_id')
+                    ->whereColumn('schedules.path_id', 'pmb_fees.path_id')
+                    ->where('schedules.is_active', true)
+                    ->whereDate('schedules.tanggal_mulai', '<=', today())
+                    ->whereDate('schedules.tanggal_selesai', '>=', today()))
                 ->whereHas('program', fn ($query) => $query->where('is_active', true))
                 ->orderBy('period_id')->orderBy('path_id')->get();
-            $registrations = Registration::with(['candidate.claim', 'period', 'path', 'program1', 'documents'])
+            $registrations = Registration::with(['candidate.claim', 'period', 'path', 'program1', 'documents', 'payments'])
                 ->where('referral_by', $user->id)->latest()->get();
 
             $marketingStages = collect([
@@ -384,11 +416,14 @@ class PmbController extends Controller
             $marketingDocumentFixCount = $registrations->filter(fn ($registration) =>
                 $registration->documents->contains(fn ($document) => $document->status_verifikasi === 'invalid')
             )->count();
+            $marketingPaymentRejectedCount = $registrations->filter(fn ($registration) =>
+                $registration->payments->contains(fn ($payment) => $payment->status === 'ditolak')
+            )->count();
 
             return response()->json([
                 'html' => view('admin.pmb.sections.marketing', compact(
                     'referral', 'fees', 'registrations', 'marketingStages', 'marketingProgramDistribution',
-                    'marketingPendingClaims', 'marketingDocumentFixCount'
+                    'marketingPendingClaims', 'marketingDocumentFixCount', 'marketingPaymentRejectedCount'
                 ))->render(),
             ]);
         }
@@ -451,8 +486,10 @@ class PmbController extends Controller
                 $programs = StudyProgram::orderBy('nama_prodi')->get();
                 $fees = Fee::with(['period', 'path', 'program'])
                     ->orderBy('period_id')->orderBy('path_id')->get();
+                $schedules = PeriodPathSchedule::with(['period', 'path'])
+                    ->orderByDesc('period_id')->orderBy('path_id')->get();
 
-                return view('admin.pmb.sections.fees', compact('periods', 'paths', 'programs', 'fees'))->render();
+                return view('admin.pmb.sections.fees', compact('periods', 'paths', 'programs', 'fees', 'schedules'))->render();
             })(),
             'referrals' => (function () {
                 $referrals = Referral::with('owner')->withCount('registrations')->latest()->get();
@@ -810,6 +847,26 @@ class PmbController extends Controller
         });
 
         return $this->mutationResponse($request, 'Biaya berhasil disimpan untuk seluruh program studi.');
+    }
+
+    public function savePeriodPathSchedule(Request $request)
+    {
+        $data = $request->validate([
+            'period_id' => ['required', 'exists:pmb_periods,id'],
+            'path_id' => ['required', 'exists:pmb_paths,id'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_selesai' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        abort_unless(Fee::where('period_id', $data['period_id'])->where('path_id', $data['path_id'])->exists(), 422, 'Atur biaya untuk kombinasi periode dan jalur ini terlebih dahulu.');
+
+        PeriodPathSchedule::updateOrCreate(
+            ['period_id' => $data['period_id'], 'path_id' => $data['path_id']],
+            ['tanggal_mulai' => $data['tanggal_mulai'], 'tanggal_selesai' => $data['tanggal_selesai'], 'is_active' => $data['is_active']]
+        );
+
+        return $this->mutationResponse($request, 'Jadwal pendaftaran jalur berhasil disimpan.');
     }
 
     public function updateFee(Request $request, int $feeId)

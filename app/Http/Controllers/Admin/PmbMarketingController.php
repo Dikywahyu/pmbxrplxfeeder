@@ -9,6 +9,7 @@ use App\Models\Pmb\CandidateDocument;
 use App\Models\Pmb\DocumentRequirement;
 use App\Models\Pmb\Fee;
 use App\Models\Pmb\Payment;
+use App\Models\Pmb\PeriodPathSchedule;
 use App\Models\Pmb\Referral;
 use App\Models\Pmb\Registration;
 use Illuminate\Http\Request;
@@ -208,9 +209,15 @@ class PmbMarketingController extends Controller
             $period && $period->is_active
                 && $period->tanggal_mulai->toDateString() <= today()->toDateString()
                 && $period->tanggal_selesai->toDateString() >= today()->toDateString()
+                && PeriodPathSchedule::where('period_id', $fee->period_id)
+                    ->where('path_id', $fee->path_id)
+                    ->where('is_active', true)
+                    ->whereDate('tanggal_mulai', '<=', today())
+                    ->whereDate('tanggal_selesai', '>=', today())
+                    ->exists()
                 && $fee->program?->is_active,
             422,
-            'Periode atau program studi pada pilihan ini sudah tidak aktif.'
+            'Periode atau jadwal jalur pendaftaran sudah ditutup, atau program studi tidak aktif.'
         );
 
         $requirements = DocumentRequirement::where('path_id', $fee->path_id)->get()->keyBy('id');

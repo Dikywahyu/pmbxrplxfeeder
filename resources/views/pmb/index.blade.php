@@ -66,7 +66,7 @@
                 @elseif($admissionCards->isNotEmpty())
                 Biodata tersimpan. Pilih kartu jalur pada langkah berikutnya untuk membuat pendaftaran.
                 @else
-                Biodata tersimpan. Kartu jalur akan muncul saat periode dan biaya pendaftaran tersedia.
+                Biodata tersimpan. Kartu jalur akan muncul saat periode dan jadwal jalurnya dibuka serta biaya pendaftaran tersedia.
                 @endif
             </div>
             @endif
@@ -188,7 +188,7 @@
                                 <select class="form-select mb-2" data-admission-choice required>
                                     <option value="">Pilih periode dan program studi</option>
                                     @foreach($card['options'] as $option)
-                                    <option value="{{ $option['period_id'] }}|{{ $option['program_id'] }}" data-period="{{ $option['period_id'] }}" data-program="{{ $option['program_id'] }}" data-amount="{{ $option['amount'] }}" @selected($selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id'] && (string) $selectedRegistration->prodi_id_1 === (string) $option['program_id'])>{{ $option['period_name'] }} · {{ $option['program_name'] }}</option>
+                                    <option value="{{ $option['period_id'] }}|{{ $option['program_id'] }}" data-period="{{ $option['period_id'] }}" data-program="{{ $option['program_id'] }}" data-amount="{{ $option['amount'] }}" @selected($selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id'] && (string) $selectedRegistration->prodi_id_1 === (string) $option['program_id'])>{{ $option['period_name'] }} ({{ $option['schedule_start'] }}–{{ $option['schedule_end'] }}) · {{ $option['program_name'] }}</option>
                                     @endforeach
                                 </select>
                                 <div class="alert alert-info py-2 small mb-3" data-admission-fee>Pilih program untuk melihat biaya pendaftaran.</div>

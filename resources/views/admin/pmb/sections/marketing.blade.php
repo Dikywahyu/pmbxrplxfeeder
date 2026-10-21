@@ -17,7 +17,7 @@
                 <div class="card-header bg-transparent d-flex justify-content-between align-items-center"><h5 class="card-title mb-0"><i class="ti ti-user-plus me-2 text-primary"></i>Input calon mahasiswa</h5><button type="button" class="btn btn-sm btn-outline-secondary" data-marketing-form-toggle="hide"><i class="ti ti-x me-1"></i>Tutup</button></div>
                 <div class="card-body">
                     @if($fees->isEmpty())
-                        <div class="alert alert-warning mb-0">Belum ada kombinasi periode, jalur, program studi, dan biaya yang sedang dibuka.</div>
+                        <div class="alert alert-warning mb-0">Belum ada kombinasi periode, jadwal jalur, program studi, dan biaya yang sedang dibuka.</div>
                     @else
                         <form action="{{ route('admin.pmb.marketing.registrations.store') }}" method="POST" enctype="multipart/form-data" class="row g-3" data-marketing-registration-form>
                             @csrf
@@ -166,6 +166,14 @@
             </div>
         </div>
     @endif
+    @if($marketingPaymentRejectedCount > 0)
+        <div class="col-12">
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-0" role="alert">
+                <i class="ti ti-receipt-off fs-5"></i>
+                <div><strong>{{ $marketingPaymentRejectedCount }} pendaftar</strong> memiliki bukti pembayaran yang ditolak. Buka detail pendaftar untuk melihat status dan membantu mengunggah bukti pengganti.</div>
+            </div>
+        </div>
+    @endif
 
     <div class="col-12">
         <div class="card border mb-0">
@@ -177,6 +185,7 @@
                         @foreach($registrations as $registration)
                             @php($claim = $registration->candidate?->claim)
                             @php($documentsNeedingFix = $registration->documents->where('status_verifikasi', 'invalid')->count())
+                            @php($paymentsRejected = $registration->payments->where('status', 'ditolak')->count())
                             <tr>
                                 <td><strong>{{ $registration->candidate?->nama_mahasiswa }}</strong><br><small class="text-muted">NIK: {{ $registration->candidate?->nik }} · {{ $registration->candidate?->email }} · {{ $registration->candidate?->handphone }}</small></td>
                                 <td>{{ $registration->period?->nama_periode }}<br><small class="text-muted">{{ $registration->path?->nama_jalur }} · {{ $registration->program1?->nama_prodi }}</small></td>
@@ -191,7 +200,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <button type="button" class="btn btn-sm {{ $documentsNeedingFix ? 'btn-outline-danger' : 'btn-outline-secondary' }}" data-marketing-registration-detail data-detail-url="{{ route('admin.pmb.marketing.registrations.show', $registration->id) }}"><i class="ti {{ $documentsNeedingFix ? 'ti-alert-triangle' : 'ti-user-search' }} me-1"></i>Biodata & berkas @if($documentsNeedingFix)<span class="badge bg-danger ms-1">{{ $documentsNeedingFix }} perlu perbaikan</span>@endif</button>
+                                    <button type="button" class="btn btn-sm {{ $documentsNeedingFix || $paymentsRejected ? 'btn-outline-danger' : 'btn-outline-secondary' }}" data-marketing-registration-detail data-detail-url="{{ route('admin.pmb.marketing.registrations.show', $registration->id) }}" data-focus-tab="{{ $paymentsRejected ? 'marketing-detail-payments' : ($documentsNeedingFix ? 'marketing-detail-documents' : '') }}"><i class="ti {{ $documentsNeedingFix || $paymentsRejected ? 'ti-alert-triangle' : 'ti-user-search' }} me-1"></i>Detail @if($documentsNeedingFix)<span class="badge bg-danger ms-1">{{ $documentsNeedingFix }} berkas perlu perbaikan</span>@endif @if($paymentsRejected)<span class="badge bg-warning text-dark ms-1">{{ $paymentsRejected }} pembayaran ditolak</span>@endif</button>
                                 </td>
                                 <td>
                                     @if($claim && ! $claim->claimed_at && ! $registration->candidate?->user_id)

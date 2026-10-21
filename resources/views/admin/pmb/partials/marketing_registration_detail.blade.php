@@ -51,6 +51,7 @@
     $uploadedDocumentCount = $registration->documents->count();
     $documentsNeedingFix = $registration->documents->where('status_verifikasi', 'invalid')->count();
     $paymentCount = $registration->payments->count();
+    $paymentsRejected = $registration->payments->where('status', 'ditolak')->count();
 @endphp
 
 <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
@@ -64,7 +65,7 @@
 <ul class="nav nav-pills gap-2 p-2 mb-3 rounded-3 bg-light" role="tablist">
     <li class="nav-item" role="presentation"><button class="nav-link active" id="marketing-detail-biodata-tab" data-bs-toggle="tab" data-bs-target="#marketing-detail-biodata" type="button" role="tab"><i class="ti ti-user me-1"></i>Biodata</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="marketing-detail-documents-tab" data-bs-toggle="tab" data-bs-target="#marketing-detail-documents" type="button" role="tab"><i class="ti ti-files me-1"></i>Berkas <span class="badge bg-white text-primary ms-1">{{ $uploadedDocumentCount }}/{{ $requirementCount }}</span>@if($documentsNeedingFix)<span class="badge bg-danger ms-1">{{ $documentsNeedingFix }} perlu perbaikan</span>@endif</button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" id="marketing-detail-payments-tab" data-bs-toggle="tab" data-bs-target="#marketing-detail-payments" type="button" role="tab"><i class="ti ti-credit-card me-1"></i>Pembayaran <span class="badge bg-white text-primary ms-1">{{ $paymentCount }}</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="marketing-detail-payments-tab" data-bs-toggle="tab" data-bs-target="#marketing-detail-payments" type="button" role="tab"><i class="ti ti-credit-card me-1"></i>Pembayaran <span class="badge bg-white text-primary ms-1">{{ $paymentCount }}</span>@if($paymentsRejected)<span class="badge bg-danger ms-1">{{ $paymentsRejected }} ditolak</span>@endif</button></li>
 </ul>
 
 <div class="tab-content">
