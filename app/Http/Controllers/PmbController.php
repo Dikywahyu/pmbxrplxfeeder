@@ -288,9 +288,9 @@ class PmbController extends Controller
             ->firstOrFail();
         $payment = $registration->payments()->findOrFail($paymentId);
 
-        if (! in_array($payment->status, ['pending', 'ditolak'], true)) {
+        if (! in_array($payment->status, ['pending', 'menunggu_verifikasi', 'ditolak'], true)) {
             return back()->withErrors([
-                'bukti_bayar' => 'Bukti hanya dapat diunggah untuk tagihan yang belum lunas atau ditolak.',
+                'bukti_bayar' => 'Bukti hanya dapat diunggah sebelum tagihan diverifikasi lunas.',
             ]);
         }
 
@@ -356,17 +356,40 @@ class PmbController extends Controller
         if ($section === 'marketing') {
             abort_unless($user->can('pmb-marketing'), 403);
             $referral = Referral::where('owner_id', $user->id)->where('is_active', true)->first();
-            $fees = Fee::with(['period', 'path', 'program'])
+            $fees = Fee::with(['period', 'path.documentRequirements', 'program'])
                 ->whereHas('period', fn ($query) => $query->where('is_active', true)
                     ->whereDate('tanggal_mulai', '<=', today())
                     ->whereDate('tanggal_selesai', '>=', today()))
                 ->whereHas('program', fn ($query) => $query->where('is_active', true))
                 ->orderBy('period_id')->orderBy('path_id')->get();
-            $registrations = Registration::with(['candidate.claim', 'period', 'path', 'program1'])
+            $registrations = Registration::with(['candidate.claim', 'period', 'path', 'program1', 'documents'])
                 ->where('referral_by', $user->id)->latest()->get();
 
+            $marketingStages = collect([
+                'draft' => 'Draft', 'berkas_masuk' => 'Berkas masuk', 'review' => 'Dalam review',
+                'sudah_ujian' => 'Sudah ujian', 'lulus' => 'Lulus', 'diterima' => 'Diterima',
+                'ditolak' => 'Ditolak', 'mundur' => 'Mundur',
+            ])->map(fn ($label, $status) => [
+                'status' => $status,
+                'label' => $label,
+                'total' => $registrations->where('status', $status)->count(),
+            ])->values();
+            $marketingProgramDistribution = $registrations
+                ->groupBy(fn ($registration) => $registration->program1?->nama_prodi ?: 'Belum dipilih')
+                ->map(fn ($items, $label) => ['label' => $label, 'total' => $items->count()])
+                ->sortByDesc('total')->values();
+            $marketingPendingClaims = $registrations->filter(fn ($registration) =>
+                ! $registration->candidate?->user_id && ! $registration->candidate?->claim?->claimed_at
+            )->count();
+            $marketingDocumentFixCount = $registrations->filter(fn ($registration) =>
+                $registration->documents->contains(fn ($document) => $document->status_verifikasi === 'invalid')
+            )->count();
+
             return response()->json([
-                'html' => view('admin.pmb.sections.marketing', compact('referral', 'fees', 'registrations'))->render(),
+                'html' => view('admin.pmb.sections.marketing', compact(
+                    'referral', 'fees', 'registrations', 'marketingStages', 'marketingProgramDistribution',
+                    'marketingPendingClaims', 'marketingDocumentFixCount'
+                ))->render(),
             ]);
         }
 

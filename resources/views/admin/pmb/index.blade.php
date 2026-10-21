@@ -50,6 +50,33 @@
     .pmb-document-preview:empty::before { content: 'Pratinjau berkas akan tampil di sini'; color: #8490a3; font-size: .9rem; }
     .pmb-document-preview img { display: block; max-width: 100%; max-height: 68vh; object-fit: contain; }
     .pmb-document-preview iframe { display: block; width: 100%; height: 68vh; min-height: 420px; border: 0; background: #fff; }
+    #pmb-marketing-registration-detail-body .nav-pills { border: 1px solid #e6ebf5; background: linear-gradient(110deg, #f1f5ff, #f7f1ff) !important; }
+    #pmb-marketing-registration-detail-body .nav-pills .nav-link { border: 1px solid transparent; color: #52617a; font-weight: 650; transition: color .18s ease, background .18s ease, transform .18s ease; }
+    #pmb-marketing-registration-detail-body .nav-pills .nav-link:hover { transform: translateY(-1px); background: #fff; color: #315efb; }
+    #pmb-marketing-registration-detail-body .nav-pills .nav-link.active { color: #fff; background: linear-gradient(120deg, #3867ed, #7251d5); box-shadow: 0 5px 14px rgba(71, 92, 211, .22); }
+    #pmb-marketing-registration-detail-body .tab-pane > .row > .col-12 > .border { border-color: #e7ebf3 !important; box-shadow: 0 6px 18px rgba(38, 58, 99, .045); }
+    #pmb-marketing-registration-detail-body .pmb-upload-card { border-radius: 1rem; transition: transform .18s ease, box-shadow .18s ease; }
+    #pmb-marketing-registration-detail-body .pmb-upload-card:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(38, 58, 99, .1) !important; }
+    #pmb-marketing-registration-detail-body .pmb-upload-document { background: linear-gradient(145deg, #fff, #f6f9ff); }
+    #pmb-marketing-registration-detail-body .pmb-upload-payment { background: linear-gradient(145deg, #fff, #fff8f1); }
+    #pmb-marketing-registration-detail-body .pmb-upload-icon { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border-radius: .85rem; background: #e9efff; color: #4265dc; font-size: 1.3rem; }
+    #pmb-marketing-registration-detail-body .pmb-upload-payment .pmb-upload-icon { background: #fff0dc; color: #d17a19; }
+    #pmb-marketing-registration-detail-body .pmb-upload-dropzone { display: flex; min-height: 116px; cursor: pointer; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; padding: 1rem; border: 1.5px dashed #9bb6f4; border-radius: .9rem; background: rgba(238, 244, 255, .8); color: #425d9b; text-align: center; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+    #pmb-marketing-registration-detail-body .pmb-upload-payment .pmb-upload-dropzone { border-color: #e8bd85; background: rgba(255, 247, 235, .9); color: #9b6422; }
+    #pmb-marketing-registration-detail-body .pmb-upload-dropzone:hover, #pmb-marketing-registration-detail-body .pmb-upload-dropzone.is-dragover { transform: translateY(-1px); border-color: #4265dc; background: #eaf0ff; }
+    #pmb-marketing-registration-detail-body .pmb-upload-dropzone.is-selected { border-style: solid; border-color: #28a879; background: #effbf6; color: #187b5a; }
+    #pmb-marketing-registration-detail-body .pmb-upload-cloud { font-size: 1.6rem; }
+    #pmb-marketing-registration-detail-body [data-upload-loading]:not([hidden]) { display: inline-flex !important; align-items: center; }
+    #pmb-marketing-registration-detail-body [data-upload-loading][hidden] { display: none !important; }
+    #pmb-marketing-registration-detail-body form.is-uploading .pmb-upload-dropzone { cursor: progress; opacity: .65; }
+    #pmb-content .marketing-optional-section { overflow: hidden; border: 1px solid #e8edf5; border-radius: .75rem; background: #fff; }
+    #pmb-content .marketing-optional-section summary { display: flex; min-height: 46px; cursor: pointer; align-items: center; justify-content: space-between; gap: .5rem; padding: .7rem .9rem; color: #40516d; font-weight: 650; list-style: none; }
+    #pmb-content .marketing-optional-section summary::-webkit-details-marker { display: none; }
+    #pmb-content .marketing-optional-section summary::after { content: '+'; color: #5d87ff; font-size: 1.2rem; }
+    #pmb-content .marketing-optional-section[open] summary::after { content: '−'; }
+    #pmb-content .marketing-optional-body { padding: .25rem .9rem .9rem; }
+    #pmb-content .marketing-stage-tile { min-height: 70px; }
+    #pmb-content .marketing-stage-tile .small { min-height: 2.2em; line-height: 1.1; }
     .pmb-status-select { min-width: 145px; border-color: #dce4f0; font-size: .82rem; }
     .pmb-status-select:focus { border-color: #5d87ff; box-shadow: 0 0 0 .2rem rgba(93, 135, 255, .14); }
     @media (max-width: 991.98px) {
@@ -64,6 +91,26 @@
         .pmb-registrations-responsive tbody td[data-label="Status seleksi"] select { width: 100%; }
         .pmb-registrations-responsive tbody td:last-child { border-bottom: 0 !important; }
         .pmb-document-chip { white-space: normal; }
+    }
+    @media (max-width: 575.98px) {
+        #pmb-admin .pmb-admin-hero { margin-bottom: .75rem !important; border-radius: .8rem; }
+        #pmb-admin .pmb-admin-hero .card-body { padding: .8rem 1rem !important; }
+        #pmb-admin .pmb-admin-hero .pmb-hero-icon { width: 42px; height: 42px; border-radius: .75rem; font-size: 1.4rem; }
+        #pmb-admin .pmb-shell-card > .card-body { padding: .75rem; }
+        #pmb-admin .pmb-shell-card .card-body > .d-flex { margin-bottom: .75rem !important; }
+        #pmb-content > .row { --bs-gutter-x: .55rem; --bs-gutter-y: .55rem; }
+        #pmb-content .card-header { padding: .7rem .8rem; }
+        #pmb-content .card-body { padding: .75rem; }
+        #pmb-content .marketing-stage-tile { min-height: 62px; }
+        #pmb-content .marketing-stage-tile .small { min-height: 2.4em; font-size: .68rem; }
+        #pmb-content .marketing-stage-tile .fs-4 { font-size: 1.15rem !important; }
+        #pmb-content [data-marketing-registration-form] .form-label { margin-bottom: .2rem; font-size: .75rem; }
+        #pmb-content [data-marketing-registration-form] .form-control,
+        #pmb-content [data-marketing-registration-form] .form-select { min-height: 36px; padding: .35rem .55rem; font-size: .82rem; }
+        #pmb-content [data-marketing-registration-form] .form-text,
+        #pmb-content [data-marketing-registration-form] small { font-size: .68rem; }
+        #pmb-content .pmb-marketing-table-wrap { overflow-x: auto; }
+        #pmb-content .pmb-marketing-table-wrap table { min-width: 680px; }
     }
 </style>
 @endpush
@@ -150,6 +197,13 @@
     </div></div>
 </div>
 
+<div class="modal fade" id="pmb-marketing-registration-detail-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><div><h5 class="modal-title">Detail pendaftar referral</h5><small class="text-muted">Biodata dan berkas yang sudah diunggah</small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+        <div class="modal-body" id="pmb-marketing-registration-detail-body"></div>
+    </div></div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -163,6 +217,7 @@
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
     let activeSection = root.dataset.section;
     let chart = null;
+    let marketingChart = null;
     let feeBulkSelection = null;
     const editModal = new bootstrap.Modal(document.getElementById('pmb-edit-modal'));
     const editForm = document.getElementById('pmb-edit-form');
@@ -171,6 +226,9 @@
     const documentModal = new bootstrap.Modal(documentModalElement);
     const documentReviewForm = document.getElementById('pmb-document-review-form');
     const marketingClaimResult = document.getElementById('pmb-marketing-claim-result');
+    const marketingDetailModalElement = document.getElementById('pmb-marketing-registration-detail-modal');
+    const marketingDetailModal = new bootstrap.Modal(marketingDetailModalElement);
+    const marketingDetailBody = document.getElementById('pmb-marketing-registration-detail-body');
     const schemas = {
         periods: [
             ['nama_periode', 'Nama periode', 'text'], ['tanggal_mulai', 'Tanggal mulai', 'date'],
@@ -305,6 +363,25 @@
         content.innerHTML = result.html;
         initializeTables();
         if (section === 'fees') setupFeeBulk();
+        if (marketingChart) { marketingChart.destroy(); marketingChart = null; }
+        if (section === 'marketing' && window.ApexCharts) {
+            const target = document.getElementById('pmb-marketing-program-chart');
+            if (target) {
+                const labels = JSON.parse(target.dataset.labels || '[]');
+                const series = JSON.parse(target.dataset.series || '[]').map(Number);
+                marketingChart = new ApexCharts(target, {
+                    chart: { type: 'donut', height: 280, toolbar: { show: false } },
+                    responsive: [{ breakpoint: 576, options: { chart: { height: 190 }, legend: { position: 'bottom', fontSize: '11px' } } }],
+                    labels, series,
+                    legend: { position: 'bottom' },
+                    dataLabels: { enabled: true },
+                    noData: { text: 'Belum ada data pendaftar' },
+                    stroke: { colors: ['#fff'], width: 3 },
+                    colors: ['#5d87ff', '#49beff', '#13deb9', '#ffae1f', '#fa896b', '#a27aff', '#e34c69'],
+                });
+                marketingChart.render();
+            }
+        }
         if (section === 'overview' && result.chart && window.ApexCharts) {
             const target = document.getElementById('pmb-status-chart');
             if (target) {
@@ -409,6 +486,40 @@
     });
 
     root.addEventListener('click', async (event) => {
+        const formToggle = event.target.closest('[data-marketing-form-toggle]');
+        if (formToggle) {
+            const panel = document.getElementById('marketing-registration-form-panel');
+            if (panel) {
+                const show = formToggle.dataset.marketingFormToggle === 'show';
+                panel.hidden = !show;
+                panel.classList.toggle('d-none', !show);
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            return;
+        }
+
+        const registrationDetailButton = event.target.closest('[data-marketing-registration-detail]');
+        if (registrationDetailButton) {
+            marketingDetailModalElement.dataset.detailUrl = registrationDetailButton.dataset.detailUrl;
+            marketingDetailModal.show();
+            marketingDetailBody.innerHTML = '<div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2"></span>Memuat biodata dan berkas...</div>';
+            try {
+                const response = await fetch(registrationDetailButton.dataset.detailUrl, {
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Detail pendaftar gagal dimuat.');
+                marketingDetailBody.innerHTML = result.html;
+            } catch (error) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger mb-0';
+                alert.textContent = error.message || 'Detail pendaftar gagal dimuat.';
+                marketingDetailBody.replaceChildren(alert);
+            }
+            return;
+        }
+
         const documentButton = event.target.closest('[data-document-review]');
         if (documentButton) {
             documentReviewForm && (documentReviewForm.action = documentButton.dataset.reviewUrl);
@@ -532,13 +643,91 @@
 
     });
 
+    marketingDetailBody.addEventListener('submit', async (event) => {
+        const form = event.target.closest('[data-marketing-file-upload]');
+        if (!form) return;
+        event.preventDefault();
+        const activeTabTarget = marketingDetailBody.querySelector('.nav-link.active')?.dataset.bsTarget;
+        const submitButton = form.querySelector('[type="submit"]');
+        const loadingIndicator = form.querySelector('[data-upload-loading]');
+        form.classList.add('is-uploading');
+        submitButton.disabled = true;
+        if (loadingIndicator) loadingIndicator.hidden = false;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const errors = Object.values(result.errors || {}).flat();
+                throw new Error(errors.join(' ') || result.message || 'Berkas gagal diunggah.');
+            }
+
+            const detailResponse = await fetch(marketingDetailModalElement.dataset.detailUrl, {
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            const detail = await detailResponse.json();
+            if (!detailResponse.ok) throw new Error(detail.message || 'File tersimpan, tetapi detail belum dapat dimuat ulang.');
+            marketingDetailBody.innerHTML = detail.html;
+            if (activeTabTarget) {
+                const activeTab = marketingDetailBody.querySelector(`[data-bs-target="${activeTabTarget}"]`);
+                if (activeTab) bootstrap.Tab.getOrCreateInstance(activeTab).show();
+            }
+            const notice = document.createElement('div');
+            notice.className = 'alert alert-success py-2';
+            notice.textContent = result.message || 'File berhasil diunggah.';
+            marketingDetailBody.prepend(notice);
+        } catch (error) {
+            const notice = document.createElement('div');
+            notice.className = 'alert alert-danger py-2';
+            notice.textContent = error.message || 'File gagal diunggah.';
+            marketingDetailBody.prepend(notice);
+            submitButton.disabled = false;
+            if (loadingIndicator) loadingIndicator.hidden = true;
+            form.classList.remove('is-uploading');
+        }
+    });
+
+    marketingDetailBody.addEventListener('change', (event) => {
+        const input = event.target.closest('input[type="file"]');
+        if (!input) return;
+        const zone = input.closest('form')?.querySelector('[data-upload-dropzone]');
+        const filename = zone?.querySelector('[data-upload-filename]');
+        const file = input.files?.[0];
+        if (filename) filename.textContent = file ? file.name : 'Seret file ke sini atau klik untuk memilih';
+        zone?.classList.toggle('is-selected', Boolean(file));
+    });
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+        marketingDetailBody.addEventListener(eventName, (event) => {
+            const zone = event.target.closest('[data-upload-dropzone]');
+            if (!zone) return;
+            event.preventDefault();
+            if (eventName === 'dragenter' || eventName === 'dragover') zone.classList.add('is-dragover');
+            if (eventName === 'dragleave' || eventName === 'drop') zone.classList.remove('is-dragover');
+            if (eventName === 'drop') {
+                const input = document.getElementById(zone.htmlFor);
+                if (input && event.dataTransfer?.files?.length) {
+                    input.files = event.dataTransfer.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        });
+    });
+
     root.addEventListener('submit', async (event) => {
         const form = event.target.closest('[data-marketing-registration-form]');
         if (!form) return;
 
         event.preventDefault();
         const submitButton = form.querySelector('[type="submit"]');
+        const loadingIndicator = form.querySelector('[data-registration-loading]');
         submitButton.disabled = true;
+        if (loadingIndicator) loadingIndicator.hidden = false;
         feedback.className = 'alert d-none';
         try {
             const response = await fetch(form.action, {
@@ -558,7 +747,23 @@
         } catch (error) {
             message(error.message || 'Pendaftaran calon mahasiswa gagal dibuat.', true);
             submitButton.disabled = false;
+            if (loadingIndicator) loadingIndicator.hidden = true;
         }
+    });
+
+    root.addEventListener('change', (event) => {
+        if (event.target.id !== 'marketing-fee') return;
+        const pathId = event.target.selectedOptions[0]?.dataset.pathId;
+        const form = event.target.closest('form');
+        form?.querySelectorAll('[data-requirement-path]').forEach((field) => {
+            const visible = Boolean(pathId) && field.dataset.requirementPath === pathId;
+            field.hidden = !visible;
+            const input = field.querySelector('input[type="file"]');
+            if (input) {
+                input.disabled = !visible;
+                if (!visible) input.value = '';
+            }
+        });
     });
 
     if (documentReviewForm) {

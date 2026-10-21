@@ -132,7 +132,12 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::get('/section/{section}', [PmbController::class, 'adminSection'])->name('section');
     Route::get('/data/{section}', [PmbController::class, 'adminData'])->name('data');
     Route::post('/marketing/registrations', [PmbMarketingController::class, 'store'])->middleware('can:pmb-marketing')->name('marketing.registrations.store');
+    Route::get('/marketing/registrations/{registrationId}', [PmbMarketingController::class, 'registrationDetail'])->middleware('can:pmb-marketing')->name('marketing.registrations.show');
     Route::post('/marketing/registrations/{registrationId}/claim-link', [PmbMarketingController::class, 'renewClaimLink'])->middleware('can:pmb-marketing')->name('marketing.registrations.claim-link');
+    Route::post('/marketing/registrations/{registrationId}/documents/{requirementId}', [PmbMarketingController::class, 'uploadRegistrationDocument'])->middleware('can:pmb-marketing')->name('marketing.registrations.documents.store');
+    Route::get('/marketing/registrations/{registrationId}/documents/{documentId}/preview', [PmbMarketingController::class, 'previewRegistrationDocument'])->middleware('can:pmb-marketing')->name('marketing.registrations.documents.preview');
+    Route::get('/marketing/registrations/{registrationId}/payments/{paymentId}/proof', [PmbMarketingController::class, 'previewRegistrationPaymentProof'])->middleware('can:pmb-marketing')->name('marketing.registrations.payments.proof');
+    Route::post('/marketing/registrations/{registrationId}/payments/{paymentId}/proof', [PmbMarketingController::class, 'uploadRegistrationPaymentProof'])->middleware('can:pmb-marketing')->name('marketing.registrations.payments.proof.store');
     Route::patch('/documents/{documentId}/verification', [PmbController::class, 'verifyCandidateDocument'])->middleware('can:pmb-review')->name('documents.verify');
     Route::post('/requirements', [PmbController::class, 'storeDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.store');
     Route::put('/requirements/{requirementId}', [PmbController::class, 'updateDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.update');

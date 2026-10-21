@@ -31,27 +31,20 @@ class PmbClaimController extends Controller
             return view('pmb.claim', ['state' => 'expired', 'candidate' => $candidate]);
         }
 
-        $existingUser = User::query()->whereRaw('LOWER(email) = ?', [mb_strtolower($candidate->email)])->exists();
-        if (! auth()->check() && $existingUser) {
-            return redirect()->guest(route('login'));
-        }
-
-        $state = auth()->check()
-            ? (mb_strtolower(auth()->user()->email) === mb_strtolower($candidate->email) ? 'ready' : 'email_mismatch')
-            : 'create_account';
+        $state = blank($candidate->nik) ? 'nik_missing' : (auth()->check() ? 'ready' : 'create_account');
 
         return view('pmb.claim', compact('candidate', 'state'));
     }
 
     public function claim(Request $request, string $token)
     {
-        if (! $request->user()) {
-            $request->validate([
-                'password' => ['required', 'string', 'min:8', 'confirmed'],
-            ]);
-        }
+        $data = $request->validate([
+            'nik' => ['required', 'digits:16'],
+            'email' => [$request->user() ? 'nullable' : 'required', 'email', 'max:255'],
+            'password' => [$request->user() ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+        ], ['nik.digits' => 'NIK harus terdiri dari 16 angka.']);
 
-        $user = DB::transaction(function () use ($request, $token) {
+        $user = DB::transaction(function () use ($request, $token, $data) {
             $claim = CandidateClaim::where('token_hash', hash('sha256', $token))
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -59,19 +52,19 @@ class PmbClaimController extends Controller
 
             $candidate = Candidate::whereKey($claim->candidate_id)->lockForUpdate()->firstOrFail();
             abort_if($candidate->user_id, 410, 'Pendaftaran ini sudah terhubung ke akun mahasiswa.');
+            abort_if(blank($candidate->nik), 422, 'NIK pendaftar belum tercatat. Hubungi marketing untuk memperbarui data.');
+            if (! hash_equals((string) $candidate->nik, (string) $data['nik'])) {
+                throw ValidationException::withMessages(['nik' => 'NIK tidak cocok dengan data pendaftaran.']);
+            }
 
             if ($request->user()) {
                 $user = $request->user();
-                if (mb_strtolower($user->email) !== mb_strtolower($candidate->email)) {
-                    throw ValidationException::withMessages([
-                        'email' => 'Link ini ditujukan untuk akun '.$candidate->email.'. Keluar dan masuk menggunakan email tersebut.',
-                    ]);
-                }
+                $candidate->email = $user->email;
             } else {
-                $email = mb_strtolower($candidate->email);
+                $email = mb_strtolower(trim($data['email']));
                 if (User::query()->whereRaw('LOWER(email) = ?', [$email])->exists()) {
                     throw ValidationException::withMessages([
-                        'email' => 'Akun dengan email ini sudah ada. Silakan masuk, lalu buka kembali link klaim.',
+                        'email' => 'Email ini sudah memiliki akun. Masuk menggunakan email tersebut, lalu buka kembali link klaim.',
                     ]);
                 }
 
@@ -81,9 +74,11 @@ class PmbClaimController extends Controller
                     'password' => $request->input('password'),
                     'phone' => $candidate->handphone,
                 ]);
+                $candidate->email = $email;
             }
 
-            $candidate->update(['user_id' => $user->id]);
+            $candidate->user_id = $user->id;
+            $candidate->save();
             $claim->update(['claimed_at' => now()]);
 
             return $user;
