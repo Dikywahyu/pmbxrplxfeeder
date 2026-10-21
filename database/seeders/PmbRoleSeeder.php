@@ -11,7 +11,7 @@ class PmbRoleSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
-            'pmb-access', 'pmb-manage', 'pmb-review', 'pmb-payment-review', 'pmb-cbt-manage', 'pmb-registration-manage',
+            'pmb-access', 'pmb-manage', 'pmb-review', 'pmb-payment-review', 'pmb-cbt-manage', 'pmb-registration-manage', 'pmb-marketing',
         ];
 
         foreach (['web', 'api'] as $guard) {
@@ -27,7 +27,7 @@ class PmbRoleSeeder extends Seeder
             'Petugas Keuangan PMB' => ['pmb-access', 'pmb-payment-review'],
             'Pimpinan PMB' => ['pmb-access'],
             'Pengelola CBT' => ['pmb-cbt-manage'],
-            'Marketing PMB' => [],
+            'Marketing PMB' => ['pmb-marketing'],
         ];
 
         foreach ($roles as $roleName => $rolePermissions) {

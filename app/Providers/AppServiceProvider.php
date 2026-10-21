@@ -145,6 +145,15 @@ class AppServiceProvider extends ServiceProvider
                     'permission' => 'pmb-manage',
                 ],
                 [
+                    'title' => 'Input Pendaftar PMB',
+                    'icon' => 'solar:user-plus-line-duotone',
+                    'url' => route('admin.pmb.section', ['section' => 'marketing']),
+                    'category' => 'Penerimaan Mahasiswa Baru',
+                    'apps_menu' => true,
+                    'active' => request()->is('admin/pmb/section/marketing'),
+                    'permission' => 'pmb-marketing',
+                ],
+                [
                     'title' => 'Ujian CBT',
                     'icon' => 'solar:clipboard-list-line-duotone',
                     'url' => route('pmb.exams.index'),

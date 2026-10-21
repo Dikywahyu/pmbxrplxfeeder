@@ -329,14 +329,16 @@ class PmbController extends Controller
 
     public function adminSection(Request $request, string $section)
     {
-        $allowed = ['registrations', 'periods', 'paths', 'programs', 'fees', 'referrals', 'requirements'];
+        $allowed = ['registrations', 'periods', 'paths', 'programs', 'fees', 'referrals', 'requirements', 'marketing'];
         abort_unless(in_array($section, $allowed, true), 404);
 
         $user = $request->user();
         $canViewRegistrations = $user->can('pmb-access') || $user->can('pmb-manage')
             || $user->can('pmb-review') || $user->can('pmb-payment-review');
         abort_unless(
-            $section === 'registrations' ? $canViewRegistrations : ($section === 'overview' || $user->can('pmb-manage')),
+            $section === 'registrations' ? $canViewRegistrations
+                : ($section === 'marketing' ? $user->can('pmb-marketing')
+                    : ($section === 'overview' || $user->can('pmb-manage'))),
             403
         );
 
@@ -350,6 +352,23 @@ class PmbController extends Controller
         $canReview = $user->can('pmb-review');
         $canReviewPayment = $user->can('pmb-payment-review');
         $canViewRegistrations = $user->can('pmb-access') || $canManage || $canReview || $canReviewPayment;
+
+        if ($section === 'marketing') {
+            abort_unless($user->can('pmb-marketing'), 403);
+            $referral = Referral::where('owner_id', $user->id)->where('is_active', true)->first();
+            $fees = Fee::with(['period', 'path', 'program'])
+                ->whereHas('period', fn ($query) => $query->where('is_active', true)
+                    ->whereDate('tanggal_mulai', '<=', today())
+                    ->whereDate('tanggal_selesai', '>=', today()))
+                ->whereHas('program', fn ($query) => $query->where('is_active', true))
+                ->orderBy('period_id')->orderBy('path_id')->get();
+            $registrations = Registration::with(['candidate.claim', 'period', 'path', 'program1'])
+                ->where('referral_by', $user->id)->latest()->get();
+
+            return response()->json([
+                'html' => view('admin.pmb.sections.marketing', compact('referral', 'fees', 'registrations'))->render(),
+            ]);
+        }
 
         if ($section === 'overview') {
             abort_unless($canViewRegistrations, 403);

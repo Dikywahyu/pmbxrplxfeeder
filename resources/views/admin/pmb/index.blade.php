@@ -75,7 +75,7 @@
             <div class="row align-items-center">
                 <div class="col-9 position-relative" style="z-index:1">
                     @php
-                        $sectionTitles = ['overview' => 'Ringkasan PMB', 'registrations' => 'Data Pendaftar', 'periods' => 'Periode Pendaftaran', 'paths' => 'Jalur Pendaftaran', 'programs' => 'Program Studi', 'fees' => 'Pengaturan Biaya', 'referrals' => 'Marketing & Referral', 'requirements' => 'Persyaratan Berkas'];
+                        $sectionTitles = ['overview' => 'Ringkasan PMB', 'registrations' => 'Data Pendaftar', 'periods' => 'Periode Pendaftaran', 'paths' => 'Jalur Pendaftaran', 'programs' => 'Program Studi', 'fees' => 'Pengaturan Biaya', 'referrals' => 'Marketing & Referral', 'requirements' => 'Persyaratan Berkas', 'marketing' => 'Input Pendaftar PMB'];
                     @endphp
                     <span class="pmb-hero-eyebrow">Portal administrasi</span>
                     <h4 class="fw-semibold mb-1">{{ $sectionTitles[$section] ?? 'Administrasi PMB' }}</h4>
@@ -87,6 +87,18 @@
     </div>
 
     <div id="pmb-feedback" class="alert d-none" role="alert" aria-live="polite"></div>
+
+    <div id="pmb-marketing-claim-result" class="card border-primary-subtle shadow-sm mb-4 d-none" aria-live="polite">
+        <div class="card-body">
+            <div class="d-flex gap-3 align-items-start">
+                <span class="d-grid rounded-circle bg-success-subtle text-success" style="width:44px;height:44px;place-items:center"><i class="ti ti-link fs-5"></i></span>
+                <div class="flex-grow-1"><h5 class="mb-1">Link klaim siap dibagikan</h5><p class="text-muted small mb-2" id="pmb-marketing-claim-number"></p>
+                    <div class="input-group"><input type="text" class="form-control" id="pmb-marketing-claim-url" readonly aria-label="Link klaim mahasiswa"><button type="button" class="btn btn-primary" id="pmb-marketing-copy-claim" data-copy-link=""><i class="ti ti-copy me-1"></i>Salin link</button></div>
+                    <small class="text-warning-emphasis d-block mt-2">Link pribadi ini hanya dapat digunakan sekali dan berlaku 14 hari. Bagikan langsung kepada mahasiswa.</small>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="card pmb-shell-card">
         <div class="card-body">
@@ -158,6 +170,7 @@
     const documentModalElement = document.getElementById('pmb-document-review-modal');
     const documentModal = new bootstrap.Modal(documentModalElement);
     const documentReviewForm = document.getElementById('pmb-document-review-form');
+    const marketingClaimResult = document.getElementById('pmb-marketing-claim-result');
     const schemas = {
         periods: [
             ['nama_periode', 'Nama periode', 'text'], ['tanggal_mulai', 'Tanggal mulai', 'date'],
@@ -188,6 +201,14 @@
     const message = (text, error = false) => {
         feedback.textContent = text;
         feedback.className = `alert alert-${error ? 'danger' : 'success'}`;
+    };
+
+    const showMarketingClaimLink = (result) => {
+        document.getElementById('pmb-marketing-claim-number').textContent = `Nomor pendaftaran: ${result.registration_number}`;
+        document.getElementById('pmb-marketing-claim-url').value = result.claim_url;
+        document.getElementById('pmb-marketing-copy-claim').dataset.copyLink = result.claim_url;
+        marketingClaimResult.classList.remove('d-none');
+        marketingClaimResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
 
     const initializeTables = () => {
@@ -420,12 +441,41 @@
             return;
         }
 
+        const claimLinkButton = event.target.closest('[data-marketing-claim-link]');
+        if (claimLinkButton) {
+            const confirmation = await Swal.fire({
+                title: 'Buat link klaim baru?',
+                text: 'Link yang dibuat sebelumnya akan langsung tidak berlaku.',
+                icon: 'question', showCancelButton: true,
+                confirmButtonText: 'Buat link baru', cancelButtonText: 'Batal',
+                confirmButtonColor: '#5d87ff',
+            });
+            if (!confirmation.isConfirmed) return;
+            claimLinkButton.disabled = true;
+            try {
+                const response = await fetch(claimLinkButton.dataset.linkUrl, {
+                    method: 'POST',
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                    credentials: 'same-origin',
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Link klaim gagal dibuat.');
+                showMarketingClaimLink(result);
+                message(result.message || 'Link klaim berhasil dibuat.');
+                await loadSection();
+            } catch (error) {
+                message(error.message || 'Link klaim gagal dibuat.', true);
+                claimLinkButton.disabled = false;
+            }
+            return;
+        }
+
         const copyButton = event.target.closest('[data-copy-link]');
         if (copyButton) {
             try {
                 await navigator.clipboard.writeText(copyButton.dataset.copyLink);
-                message('Link referral berhasil disalin.');
-            } catch (error) { message('Gagal menyalin link referral.', true); }
+                message(copyButton.id === 'pmb-marketing-copy-claim' ? 'Link klaim berhasil disalin.' : 'Link referral berhasil disalin.');
+            } catch (error) { message('Gagal menyalin link.', true); }
             return;
         }
 
@@ -480,6 +530,35 @@
             return;
         }
 
+    });
+
+    root.addEventListener('submit', async (event) => {
+        const form = event.target.closest('[data-marketing-registration-form]');
+        if (!form) return;
+
+        event.preventDefault();
+        const submitButton = form.querySelector('[type="submit"]');
+        submitButton.disabled = true;
+        feedback.className = 'alert d-none';
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                credentials: 'same-origin',
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                const errors = Object.values(result.errors || {}).flat();
+                throw new Error(errors.join(' ') || result.message || 'Pendaftaran calon mahasiswa gagal dibuat.');
+            }
+            await loadSection();
+            showMarketingClaimLink(result);
+            message(result.message || 'Pendaftar berhasil dibuat.');
+        } catch (error) {
+            message(error.message || 'Pendaftaran calon mahasiswa gagal dibuat.', true);
+            submitButton.disabled = false;
+        }
     });
 
     if (documentReviewForm) {

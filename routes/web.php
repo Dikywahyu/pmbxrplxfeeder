@@ -2,23 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\ApiClientController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\PassportClientController;
 use App\Http\Controllers\PmbController;
+use App\Http\Controllers\PmbClaimController;
+use App\Http\Controllers\Admin\PmbMarketingController;
 use App\Http\Controllers\CbtController;
 
-use App\Http\Controllers\Kanban\KanbanController;
-
-use App\Http\Controllers\Apps\{
-    ActivityTypeController, 
-    ActivityController, 
-    ActivitySessionController, 
-    ActivityReportController, 
-    AttendanceController,  
-    ShortLinkController,  
-};  
 
 use App\Http\Controllers\Admin\{
     RoleController,
@@ -34,20 +25,7 @@ use App\Http\Controllers\Auth\{
     TwoFactorAuthController,
     VerificationController,
 };
-use Illuminate\Support\Facades\DB;
 
-
-// PENCEGAT DARURAT: Mengintip data yang dilempar dari SIAKAD Lokal
-// Route::get('/oauth/authorize', function(\Illuminate\Http\Request $request) {
-//     dd([
-//         'KETERANGAN' => 'Melihat data kiriman dari SIAKAD Lokal',
-//         'CLIENT_ID_YANG_DIKIRIM' => $request->query('client_id'),
-//         'REDIRECT_URI_TUTUAN'    => $request->query('redirect_uri'),
-//         'RESPONSE_TYPE'          => $request->query('response_type'),
-//         'STATE_OAUTH'            => $request->query('state'),
-//         'SEMUA_PARAMETER_URL'    => $request->all()
-//     ]);
-// });
 
 /*
 |--------------------------------------------------------------------------
@@ -55,17 +33,17 @@ use Illuminate\Support\Facades\DB;
 |--------------------------------------------------------------------------
 */
 // Form Presensi via Scan QR Code (Peserta Internal & Tamu Eksternal)
-Route::get('/presensi/{token}', [AttendanceController::class, 'publicForm'])->name('attendances.public_form');
-Route::post('/presensi/{token}', [AttendanceController::class, 'publicSubmit'])->name('attendances.public_submit');
 
-// Hal Verifikasi QR Tanda Tangan Digital Berita Acara
-Route::get('/verify-report/{token}', [ActivityReportController::class, 'verifyDigitalSignature'])->name('activity-reports.verify');
-
-Route::get('/approve-report/{token}', [ActivityReportController::class, 'publicApprovalView'])->name('activity_reports.public_approval');
-Route::post('/approve-report/{token}', [ActivityReportController::class, 'publicApprovalSubmit'])->name('activity_reports.public_approval_submit');
+Route::get('/pmb/claim/{token}', [PmbClaimController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->name('pmb.claim.show');
+Route::post('/pmb/claim/{token}', [PmbClaimController::class, 'claim'])
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->middleware('throttle:10,1')
+    ->name('pmb.claim.store');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', fn () => redirect('/auth/login'));
+    Route::get('/login', fn() => redirect('/auth/login'));
     Route::post('/login', [LoginController::class, 'login']);
 });
 
@@ -75,62 +53,12 @@ Route::middleware('guest')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('apps')->name('apps.')->group(function () {
-    Route::prefix('sessions')->name('sessions.')->group(function () { 
-            // Menampilkan Layar QR Code Sesi untuk di-scan Peserta
-            Route::get('/{session}/qr-display', [ActivitySessionController::class, 'qrDisplay'])->name('qr_display');
-    });
-});
-Route::middleware(['auth'])->prefix('apps')->name('apps.')->group(function () {
-
-    // 1. MASTER DATA: Tipe Kegiatan
-    Route::resource('activity-types', ActivityTypeController::class);
-
-    // 2. KEGIATAN & SESI
-    Route::resource('activities', ActivityController::class);
-    
-    // Nested/Additional Route untuk Sesi Pertemuan di dalam Kegiatan
-    Route::prefix('activities/{activity}')->name('activities.')->group(function () {
-        Route::post('/sessions', [ActivitySessionController::class, 'store'])->name('sessions.store');
-    });
-    
-    Route::prefix('sessions')->name('sessions.')->group(function () {
-        Route::get('/{session}', [ActivitySessionController::class, 'show'])->name('show');
-        Route::put('/{session}', [ActivitySessionController::class, 'update'])->name('update');
-        Route::delete('/{session}', [ActivitySessionController::class, 'destroy'])->name('destroy');
-        
-        
-    });
-
-    // 3. BERITA ACARA & NOTULENSI
-    Route::resource('activity-reports', ActivityReportController::class);
-    Route::prefix('activity-reports')->name('activity-reports.')->group(function () {
-        // Helper route untuk fetch data laporan berdasarkan activity_id
-        Route::get('/by-activity/{activityId}', [ActivityReportController::class, 'getByActivity'])->name('by_activity');
-    
-        // Cetak Dokumen Berita Acara PDF
-        Route::get('/{activityReport}/print-pdf', [ActivityReportController::class, 'printPdf'])->name('print_pdf');
-        // Fitur Pengesahan Digital (Aprove/Reject)
-        Route::post('/{activityReport}/approve', [ActivityReportController::class, 'approve'])->name('approve');
-    });
-
-    // 4. DATA PRESENSI (REKAP & MONITORING)
-    Route::resource('attendances', AttendanceController::class)->only(['index', 'destroy']);
-    Route::prefix('attendances')->name('attendances.')->group(function () {
-        // Export Rekap Kehadiran (Excel/PDF)
-        Route::get('/export/excel', [AttendanceController::class, 'exportExcel'])->name('export_excel');
-        Route::get('/export/pdf', [AttendanceController::class, 'exportPdf'])->name('export_pdf');
-        // Manual Input Presensi oleh Operator
-        Route::post('/manual-store', [AttendanceController::class, 'manualStore'])->name('manual_store');
-    });
-
-});
 
 Route::prefix('auth')->group(function () {
-    
+
     // Rute khusus GUEST (Hanya bisa diakses jika BELUM login)
     Route::middleware(['guest'])->group(function () {
-        
+
         Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
         Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
         Route::post('login', [LoginController::class, 'login']);
@@ -155,9 +83,8 @@ Route::prefix('auth')->group(function () {
             ->name('verification.verify')->middleware(['signed']);
         Route::post('email/resend', [VerificationController::class, 'resend'])
             ->name('verification.resend')->middleware(['throttle:6,1']);
-            
+
         Route::post('/2fa/toggle', [UserController::class, 'toggleSecured'])->name('2fa.toggle');
-         
     });
 
     Route::middleware(['auth', 'verified'])->group(function () {
@@ -166,42 +93,8 @@ Route::prefix('auth')->group(function () {
         Route::get('auth/2fa/verify', [TwoFactorAuthController::class, 'index'])->name('2fa.index');
         Route::post('auth/2fa/verify', [TwoFactorAuthController::class, 'verify'])->name('2fa.verify');
     });
-    
-    
 });
 
-Route::middleware(['auth'])->group(function () {
-    
-    Route::prefix('kanban')->name('kanban.')->group(function () { 
-        // 1. Rute Utama & Manajemen Board (Query String)
-        Route::get('/', [KanbanController::class, 'index'])->name('index'); 
-        Route::post('/board/store', [KanbanController::class, 'storeBoard'])->name('board.store');
-        Route::delete('/board/delete/{id}', [KanbanController::class, 'deleteBoard'])->name('board.delete');
-        
-        // 2. TAMBAHAN BARIS BARU: Rute Fitur Kolaborasi (Share Board)
-        // Mengambil daftar user/dosen untuk dipilih di modal share
-        Route::get('/board/{id}/users', [KanbanController::class, 'getAvailableUsers'])->name('board.users');
-        // Menyimpan kolaborator baru ke tabel pivot
-        Route::post('/board/share', [KanbanController::class, 'shareBoard'])->name('board.share');
-        
-        // Fitur Kolaborasi Lanjutan
-        Route::get('/board/{id}/members', [KanbanController::class, 'getBoardMembers'])->name('board.members');
-        
-        // PERBAIKAN DI SINI: Tambahkan ->name('member.update')
-        Route::post('/board/member/update', [KanbanController::class, 'updateMemberRole'])->name('member.update');
-        
-        // PERBAIKAN DI SINI: Tambahkan ->name('member.remove')
-        Route::delete('/board/member/remove/{board_id}/{user_id}', [KanbanController::class, 'removeMember'])->name('member.remove');
-
-        // 3. Rute AJAX Manajemen Data & Kartu Tugas (Tetap Sama)
-        Route::get('/board-data/{id}', [KanbanController::class, 'getBoardData'])->name('data');
-        Route::post('/task/store', [KanbanController::class, 'storeTask'])->name('task.store');
-        Route::post('/task/update-position', [KanbanController::class, 'updateTaskPosition'])->name('task.updatePosition');
-        Route::put('/task/update/{id}', [KanbanController::class, 'updateTask'])->name('task.update');
-        Route::delete('/task/delete/{id}', [KanbanController::class, 'deleteTask'])->name('task.delete');
-    });
-
-});
 
 Route::middleware(['auth'])->prefix('pmb')->name('pmb.')->group(function () {
     Route::get('/', [PmbController::class, 'index'])->name('index');
@@ -238,6 +131,8 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::get('/', [PmbController::class, 'adminIndex'])->name('index');
     Route::get('/section/{section}', [PmbController::class, 'adminSection'])->name('section');
     Route::get('/data/{section}', [PmbController::class, 'adminData'])->name('data');
+    Route::post('/marketing/registrations', [PmbMarketingController::class, 'store'])->middleware('can:pmb-marketing')->name('marketing.registrations.store');
+    Route::post('/marketing/registrations/{registrationId}/claim-link', [PmbMarketingController::class, 'renewClaimLink'])->middleware('can:pmb-marketing')->name('marketing.registrations.claim-link');
     Route::patch('/documents/{documentId}/verification', [PmbController::class, 'verifyCandidateDocument'])->middleware('can:pmb-review')->name('documents.verify');
     Route::post('/requirements', [PmbController::class, 'storeDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.store');
     Route::put('/requirements/{requirementId}', [PmbController::class, 'updateDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.update');
@@ -275,31 +170,14 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
         ->name('payments.verify');
 });
 
-// Rute yang membutuhkan Login (Untuk Manajemen Pembuatan Link)
-Route::middleware(['auth'])->group(function () {
-    Route::resource('short-links', ShortLinkController::class); 
-    Route::get('short-links/{id}/qr-data', [ShortLinkController::class, 'getQrData'])->name('short-links.qr');
-    Route::post('/qr/generate-instant', [ShortLinkController::class, 'generateInstantQr'])->name('qr.generate-instant');
-});
-
-Route::prefix('apps')->name('apps.')->group(function () {
-    // Resource route otomatis mencakup 7 method CRUD (index, create, store, show, edit, update, destroy)
-    Route::resource('activity-types', ActivityTypeController::class);
-});
-
-// Rute Umum/Publik diletakkan di luar middleware auth (Taruh di baris paling bawah file web.php)
-// Skema URL: iam.cwcu.ac.id/s/{kode}
-Route::get('/s/{code}', [ShortLinkController::class, 'handleRedirect'])->name('shortlink.redirect');
- 
-
 Route::get('/', function () {
-    $referral = \App\Models\Pmb\Referral::where('owner_id', auth()->id())->where('is_active', true)->first();
+    $referral = \App\Models\Pmb\Referral::where('owner_id', Auth::id())->where('is_active', true)->first();
     return view('dashboard', compact('referral'));
 })->middleware(['auth', 'verified', '2fa'])->name('dashboard');
-    
+
 // Halaman Utama setelah lolos semua gerbang keamanan
 Route::get('/dashboard', function () {
-    $referral = \App\Models\Pmb\Referral::where('owner_id', auth()->id())->where('is_active', true)->first();
+    $referral = \App\Models\Pmb\Referral::where('owner_id', Auth::id())->where('is_active', true)->first();
     return view('dashboard', compact('referral'));
 })->middleware(['auth', 'verified', '2fa'])->name('dashboard');
 
@@ -341,10 +219,6 @@ Route::prefix('admin')->middleware(['auth', 'verified', '2fa'])->group(function 
     // logs Role (Spatie)
     Route::get('/users/{hashid}/logs', [UserController::class, 'getUserLogs'])->name('admin.users.logs');
 
-    // Route untuk CRUD API Client
-    // Route::resource('api-clients', ApiClientController::class);
-    // // Route tambahan untuk toggle status aktif/nonaktif secara cepat
-    // Route::post('api-clients/{id}/toggle', [ApiClientController::class, 'toggleStatus'])->name('api-clients.toggle');
     Route::post('system/clear-cache', [PassportClientController::class, 'clearSystemCache'])->name('admin.clear-cache');
     Route::post('api-clients/{id}/regenerate-secret', [PassportClientController::class, 'regenerateSecret']);
     Route::resource('api-clients', PassportClientController::class)->except(['create', 'edit']);
@@ -362,9 +236,4 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::resource('permissions', PermissionController::class);
-});
-
-Route::get('/mark-notifications-read', function () {
-    Auth::user()->unreadNotifications->markAsRead();
-    return response()->json(['status' => 'success']);
 });
