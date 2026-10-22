@@ -5,14 +5,13 @@
 @section('canonical_url', route('home'))
 
 @push('meta')
-<script type="application/ld+json">
-    @json([
+@php
+    $pmbStructuredData = [
         '@context' => 'https://schema.org',
         '@graph' => [
             [
                 '@type' => 'CollegeOrUniversity',
-                '@id' => route('home').
-                '#university',
+                '@id' => route('home').'#university',
                 'name' => 'Universitas Cipta Wacana',
                 'url' => route('home'),
                 'logo' => asset('logo.png'),
@@ -21,17 +20,17 @@
             ],
             [
                 '@type' => 'WebSite',
-                '@id' => route('home').
-                '#website',
+                '@id' => route('home').'#website',
                 'url' => route('home'),
                 'name' => 'PMB Universitas Cipta Wacana',
                 'inLanguage' => 'id-ID',
-                'publisher' => ['@id' => route('home').
-                    '#university'
-                ],
+                'publisher' => ['@id' => route('home').'#university'],
             ],
         ],
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    ];
+@endphp
+<script type="application/ld+json">
+    {{ json_encode($pmbStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}
 </script>
 @endpush
 
