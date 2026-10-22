@@ -3,7 +3,7 @@
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4"><div><h4 class="fw-semibold mb-1">Hasil: {{ $exam->title }}</h4><p class="text-muted mb-0">Periksa jawaban esai dan beri nilai manual.</p></div><a class="btn btn-light" href="{{ route('admin.cbt.index') }}">Kembali</a></div>
-    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+    @if(session('success'))<div class="alert alert-success" data-app-toast>{{ session('success') }}</div>@endif
     @forelse($exam->attempts as $attempt)
         <div class="card"><div class="card-body"><div class="d-flex justify-content-between flex-wrap"><div><h5>{{ $attempt->registration->candidate?->nama_mahasiswa ?? 'Pendaftar' }}</h5><p class="text-muted">{{ $attempt->registration->nomor_pendaftaran }} · {{ $attempt->status }} · Mulai {{ $attempt->started_at->format('d/m/Y H:i') }}</p></div><span class="badge bg-primary align-self-start">Nilai saat ini: {{ $attempt->score }}</span></div>
             @foreach($attempt->answers as $answer)

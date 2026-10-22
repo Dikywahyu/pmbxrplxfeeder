@@ -8,6 +8,7 @@
     <link href="{{ asset('templates/css/common.css') }}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Poppins:400,600,700&display=swap" rel="stylesheet">
     <link href="{{ asset('templates/css/theme-03.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('dist/assets/libs/sweetalert2/dist/sweetalert2.min.css') }}">
     
     <!-- Favicons -->
     <link
@@ -118,5 +119,7 @@
     <script src="{{ asset('templates/js/jquery.min.js') }}"></script>
     <script src="{{ asset('templates/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('templates/js/main.js') }}"></script>
+    <script src="{{ asset('dist/assets/libs/sweetalert2/dist/sweetalert2.min.js') }}"></script>
+    @include('layouts.partials.toast-notifications')
 </body>
 </html>

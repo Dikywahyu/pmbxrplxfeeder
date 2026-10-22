@@ -8,8 +8,8 @@
             <p class="text-muted mb-0">Buat ujian, kelola soal, dan periksa hasil peserta.</p>
         </div>
     </div>
-    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+    @if(session('success'))<div class="alert alert-success" data-app-toast>{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="alert alert-danger" data-app-toast>{{ $errors->first() }}</div>@endif
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Buat ujian</h5>

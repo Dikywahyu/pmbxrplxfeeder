@@ -10,11 +10,11 @@
     </div>
 
     @if(session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
+    <div class="alert alert-success" data-app-toast>{{ session('success') }}</div>
     @endif
 
     @if($errors->any())
-    <div class="alert alert-danger">
+    <div class="alert alert-danger" data-app-toast>
         <ul class="mb-0">
             @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
@@ -172,10 +172,10 @@
                 @foreach($admissionCards as $card)
                 @php($selectedRegistration = $registrations->first(fn($registration) => (string) $registration->path_id === (string) $card['path']->id))
                 <div class="col-md-6 col-xl-4">
-                    <div class="card h-100 border shadow-sm">
+                    <div class="card h-100 border shadow-sm {{ (string) $card['path']->id === $selectedPathId ? 'border-danger border-2' : '' }}">
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                <h5 class="card-title mb-0">{{ $card['path']->nama_jalur }}</h5><span class="badge bg-primary-subtle text-primary">{{ $card['options']->count() }} pilihan</span>
+                                <h5 class="card-title mb-0">{{ $card['path']->nama_jalur }}</h5><span class="badge {{ (string) $card['path']->id === $selectedPathId ? 'bg-danger' : 'bg-primary-subtle text-primary' }}">{{ (string) $card['path']->id === $selectedPathId ? 'Jalur dipilih' : $card['options']->count().' pilihan' }}</span>
                             </div>
                             @if($card['path']->deskripsi)<p class="text-muted small">{{ $card['path']->deskripsi }}</p>@endif
                             <form method="POST" action="{{ route('pmb.registrations.store') }}" class="mt-auto" data-admission-form>
@@ -184,11 +184,18 @@
                                 <input type="hidden" name="path_id" value="{{ $card['path']->id }}">
                                 <input type="hidden" name="period_id">
                                 <input type="hidden" name="prodi_id">
-                                <label class="form-label">Periode dan program studi</label>
-                                <select class="form-select mb-2" data-admission-choice required>
-                                    <option value="">Pilih periode dan program studi</option>
+                                <label class="form-label">Periode pendaftaran</label>
+                                <select class="form-select mb-2" data-admission-period required>
+                                    <option value="">Pilih periode</option>
+                                    @foreach($card['options']->unique('period_id') as $option)
+                                    <option value="{{ $option['period_id'] }}" @selected(((string) $card['path']->id === $selectedPathId && (string) $option['period_id'] === $selectedPeriodId) || ($selectedPathId === '' && $selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id']))>{{ $option['period_name'] }} ({{ $option['schedule_start'] }}–{{ $option['schedule_end'] }})</option>
+                                    @endforeach
+                                </select>
+                                <label class="form-label">Program studi</label>
+                                <select class="form-select mb-2" data-admission-program required disabled>
+                                    <option value="">Pilih periode terlebih dahulu</option>
                                     @foreach($card['options'] as $option)
-                                    <option value="{{ $option['period_id'] }}|{{ $option['program_id'] }}" data-period="{{ $option['period_id'] }}" data-program="{{ $option['program_id'] }}" data-amount="{{ $option['amount'] }}" data-spp="{{ $option['amount_spp'] }}" @selected($selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id'] && (string) $selectedRegistration->prodi_id_1 === (string) $option['program_id'])>{{ $option['period_name'] }} ({{ $option['schedule_start'] }}–{{ $option['schedule_end'] }}) · {{ $option['program_name'] }}</option>
+                                    <option value="{{ $option['program_id'] }}" data-period="{{ $option['period_id'] }}" data-amount="{{ $option['amount'] }}" data-spp="{{ $option['amount_spp'] }}" @selected($selectedPathId === '' && $selectedRegistration && (string) $selectedRegistration->period_id === (string) $option['period_id'] && (string) $selectedRegistration->prodi_id_1 === (string) $option['program_id'])>{{ $option['program_name'] }}</option>
                                     @endforeach
                                 </select>
                                 <div class="alert alert-info py-2 small mb-3" data-admission-fee>Pilih program untuk melihat biaya pendaftaran dan SPP per semester.</div>
@@ -324,19 +331,43 @@
         showStep(activeStep);
 
         document.querySelectorAll('[data-admission-form]').forEach((form) => {
-            const choice = form.querySelector('[data-admission-choice]');
+            const periodChoice = form.querySelector('[data-admission-period]');
+            const programChoice = form.querySelector('[data-admission-program]');
             const period = form.querySelector('[name="period_id"]');
             const program = form.querySelector('[name="prodi_id"]');
             const feeLabel = form.querySelector('[data-admission-fee]');
-            choice.addEventListener('change', () => {
-                const option = choice.selectedOptions[0];
-                period.value = option?.dataset.period ?? '';
-                program.value = option?.dataset.program ?? '';
+            const updatePrograms = (preserveSelection = true) => {
+                const selectedPeriod = periodChoice.value;
+                const previouslySelected = preserveSelection ? programChoice.value : '';
+                let visibleOptions = 0;
+                [...programChoice.options].forEach((option, index) => {
+                    if (index === 0) return;
+                    const matches = option.dataset.period === selectedPeriod;
+                    option.hidden = !matches;
+                    option.disabled = !matches;
+                    if (matches) visibleOptions++;
+                });
+                programChoice.disabled = !selectedPeriod || visibleOptions === 0;
+                programChoice.options[0].textContent = selectedPeriod ? 'Pilih program studi' : 'Pilih periode terlebih dahulu';
+                if (!previouslySelected || ![...programChoice.options].some((option) => option.value === previouslySelected && option.dataset.period === selectedPeriod)) {
+                    programChoice.value = '';
+                } else {
+                    programChoice.value = previouslySelected;
+                }
+                period.value = selectedPeriod;
+                program.value = programChoice.value;
+                updateFee();
+            };
+            const updateFee = () => {
+                const option = programChoice.selectedOptions[0];
+                program.value = option?.value ?? '';
                 feeLabel.textContent = option?.dataset.amount ?
                     `Biaya pendaftaran: Rp ${new Intl.NumberFormat('id-ID').format(Number(option.dataset.amount))} · SPP per semester: Rp ${new Intl.NumberFormat('id-ID').format(Number(option.dataset.spp || 0))}` :
-                    'Pilih program untuk melihat biaya pendaftaran dan SPP per semester.';
-            });
-            if (choice.value) choice.dispatchEvent(new Event('change'));
+                    'Pilih program studi untuk melihat biaya pendaftaran dan SPP per semester.';
+            };
+            periodChoice.addEventListener('change', () => updatePrograms(false));
+            programChoice.addEventListener('change', updateFee);
+            updatePrograms(true);
         });
     })();
 </script>

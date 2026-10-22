@@ -61,13 +61,13 @@
 
     {{-- Alert Notification --}}
     @if (session('error') || isset($error))
-        <div class="alert alert-danger py-2 mb-4 text-center small">
+        <div class="alert alert-danger py-2 mb-4 text-center small" data-app-toast>
             {{ session('error') ?? $error }}
         </div>
     @endif
 
     @if (session('success'))
-        <div class="alert alert-success py-3 mb-4 text-center">
+        <div class="alert alert-success py-3 mb-4 text-center" data-app-toast>
             <strong>Berhasil!</strong><br>
             <small>{{ session('success') }}</small>
         </div>

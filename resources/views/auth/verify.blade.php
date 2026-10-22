@@ -14,7 +14,7 @@
     </div>
 
     @if (session('resent'))
-        <div class="alert alert-success py-2 text-center">
+        <div class="alert alert-success py-2 text-center" data-app-toast>
             <small>Link verifikasi baru berhasil dikirim!</small>
         </div>
     @endif

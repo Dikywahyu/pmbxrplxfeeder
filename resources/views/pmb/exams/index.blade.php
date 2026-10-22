@@ -2,7 +2,7 @@
 @section('title', 'Ujian CBT')
 @section('content')
 <div class="container py-3"><div class="mb-4"><h3 class="fw-bold mb-1">Ujian CBT</h3><p class="text-muted mb-0">Ujian dapat berisi pilihan ganda dan esai. Perhatikan jadwal dan durasi sebelum memulai.</p></div>
-    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+    @if(session('success'))<div class="alert alert-success" data-app-toast>{{ session('success') }}</div>@endif
     @forelse($exams as $exam)
         @php($attempt = $attempts->get($exam->id))
         <div class="card shadow-sm"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">

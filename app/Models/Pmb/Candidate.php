@@ -22,6 +22,7 @@ class Candidate extends Model
             'is_ktp_verified' => 'boolean',
             'penerima_kps' => 'boolean',
             'terdaftar_dtks' => 'boolean',
+            'desil' => 'integer',
         ];
     }
 

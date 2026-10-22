@@ -32,18 +32,26 @@ class PmbController extends Controller
         }
         $candidate = Candidate::where('user_id', auth()->id())->first();
 
-        $periods = Period::query()
-            ->where('is_active', true)
-            ->whereDate('tanggal_mulai', '<=', today())
-            ->whereDate('tanggal_selesai', '>=', today())
-            ->orderBy('tanggal_mulai')
-            ->get();
         $openPathSchedules = PeriodPathSchedule::query()
             ->where('is_active', true)
             ->whereDate('tanggal_mulai', '<=', today())
             ->whereDate('tanggal_selesai', '>=', today())
             ->get()
             ->keyBy(fn ($schedule) => "{$schedule->period_id}:{$schedule->path_id}");
+        $periods = Period::query()
+            ->where('is_active', true)
+            ->whereIn('id', $openPathSchedules->pluck('period_id')->unique())
+            ->orderBy('nama_periode')
+            ->get();
+
+        if ($request->filled('path_id') && $request->filled('period_id')) {
+            session([
+                'pmb_selected_path_id' => (string) $request->query('path_id'),
+                'pmb_selected_period_id' => (string) $request->query('period_id'),
+            ]);
+        }
+        $selectedPathId = (string) $request->session()->get('pmb_selected_path_id', '');
+        $selectedPeriodId = (string) $request->session()->get('pmb_selected_period_id', '');
         $paths = PmbPath::orderBy('nama_jalur')->get();
         $programs = StudyProgram::where('is_active', true)->orderBy('nama_prodi')->get();
         $fees = Fee::with(['period', 'path', 'program'])
@@ -97,7 +105,9 @@ class PmbController extends Controller
             'fees',
             'admissionCards',
             'registrations',
-            'profileComplete'
+            'profileComplete',
+            'selectedPathId',
+            'selectedPeriodId'
         ));
     }
 
@@ -188,14 +198,9 @@ class PmbController extends Controller
         }
 
         $period = Period::find($data['period_id']);
-        if (
-            ! $period
-            || ! $period->is_active
-            || $period->tanggal_mulai->toDateString() > today()->toDateString()
-            || $period->tanggal_selesai->toDateString() < today()->toDateString()
-        ) {
+        if (! $period || ! $period->is_active) {
             return back()->withInput()->withErrors([
-                'period_id' => 'Periode pendaftaran tidak aktif atau sudah di luar jadwal.',
+                'period_id' => 'Periode pendaftaran tidak aktif.',
             ]);
         }
 
@@ -306,7 +311,7 @@ class PmbController extends Controller
             return $registration;
         });
 
-        session()->forget('pmb_referral_code');
+        session()->forget(['pmb_referral_code', 'pmb_selected_path_id', 'pmb_selected_period_id']);
 
         return redirect()
             ->route('pmb.index')
@@ -997,6 +1002,18 @@ class PmbController extends Controller
         return $this->mutationResponse($request, 'Status pendaftaran berhasil diperbarui.');
     }
 
+    public function updateCandidateDesil(Request $request, int $registrationId)
+    {
+        $data = $request->validate([
+            'desil' => ['nullable', 'integer', 'between:1,10'],
+        ]);
+
+        $registration = Registration::with('candidate')->findOrFail($registrationId);
+        $registration->candidate->update(['desil' => $data['desil'] ?? null]);
+
+        return $this->mutationResponse($request, 'Desil calon mahasiswa berhasil diperbarui.');
+    }
+
     public function updateRegistrationDetails(Request $request, int $registrationId)
     {
         $data = $request->validate([
@@ -1004,6 +1021,7 @@ class PmbController extends Controller
             'nik' => ['nullable', 'digits:16'],
             'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
             'handphone' => ['nullable', 'string', 'max:20'],
+            'desil' => ['nullable', 'integer', 'between:1,10'],
             'status' => ['required', Rule::in(['draft', 'berkas_masuk', 'review', 'sudah_ujian', 'lulus', 'diterima', 'ditolak', 'mundur'])],
         ]);
 
@@ -1014,6 +1032,7 @@ class PmbController extends Controller
                 'nik' => $data['nik'] ?? null,
                 'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
                 'handphone' => $data['handphone'] ?? null,
+                'desil' => $data['desil'] ?? null,
             ]);
             $registration->update(['status' => $data['status']]);
         });

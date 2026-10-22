@@ -14,7 +14,7 @@
     </div>
 
     @if ($errors->any())
-        <div class="alert alert-danger py-2 text-center">
+        <div class="alert alert-danger py-2 text-center" data-app-toast>
             <small>{{ $errors->first() }}</small>
         </div>
     @endif

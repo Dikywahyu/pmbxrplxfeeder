@@ -118,7 +118,7 @@
 
         {{-- NOTIFIKASI SUKSES --}}
         @if(session('success'))
-            <div class="alert alert-success border-0 text-center py-2 mb-3 no-print rounded-3 small">
+            <div class="alert alert-success border-0 text-center py-2 mb-3 no-print rounded-3 small" data-app-toast>
                 🎉 <strong>{{ session('success') }}</strong>
             </div>
         @endif

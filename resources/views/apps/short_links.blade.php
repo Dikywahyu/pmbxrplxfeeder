@@ -24,10 +24,10 @@
 
     {{-- Notifikasi Alert Sistem --}}
     @if(session('success_msg'))
-        <div class="alert alert-success border-0 shadow-sm">{{ session('success_msg') }}</div>
+        <div class="alert alert-success border-0 shadow-sm" data-app-toast>{{ session('success_msg') }}</div>
     @endif
     @if(session('error_msg'))
-        <div class="alert alert-danger border-0 shadow-sm">{{ session('error_msg') }}</div>
+        <div class="alert alert-danger border-0 shadow-sm" data-app-toast>{{ session('error_msg') }}</div>
     @endif
 
     <div class="row">

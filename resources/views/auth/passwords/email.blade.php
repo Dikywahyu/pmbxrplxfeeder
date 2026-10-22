@@ -14,13 +14,13 @@
     </div>
 
     @if (session('status'))
-        <div class="alert alert-success py-2 text-center">
+        <div class="alert alert-success py-2 text-center" data-app-toast>
             <small>{{ session('status') }}</small>
         </div>
     @endif
 
     @if ($errors->has('email'))
-        <div class="alert alert-danger py-2 text-center">
+        <div class="alert alert-danger py-2 text-center" data-app-toast>
             <small>{{ $errors->first('email') }}</small>
         </div>
     @endif

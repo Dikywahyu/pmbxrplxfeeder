@@ -7,6 +7,7 @@
 <script src="{{ asset('dist/assets/js/theme/app.min.js') }}"></script>
 
 <script src="{{ asset('dist/assets/libs/sweetalert2/dist/sweetalert2.min.js') }}"></script>
+@include('layouts.partials.toast-notifications')
 <script src="{{ asset('dist/assets/js/forms/sweet-alert.init.js') }}"></script>
 <!-- <script src="{{ asset('dist/assets/js/theme/sidebarmenu.js') }}"></script> -->
 

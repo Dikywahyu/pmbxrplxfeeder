@@ -46,6 +46,7 @@
     .pmb-document-chip[data-status="invalid"] small { background: #ffe2dc; color: #b54735; }
     .pmb-document-chip[data-status="pending"] small { background: #e4edff; color: #3159a5; }
     .pmb-document-chevron { opacity: .5; }
+    .pmb-registration-documents { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .35rem; min-width: 0; }
     .pmb-document-preview { display: flex; min-height: 220px; max-height: 68vh; align-items: center; justify-content: center; overflow: auto; border: 1px solid #e8edf5; border-radius: .75rem; background: #f5f7fb; }
     .pmb-document-preview:empty::before { content: 'Pratinjau berkas akan tampil di sini'; color: #8490a3; font-size: .9rem; }
     .pmb-document-preview img { display: block; max-width: 100%; max-height: 68vh; object-fit: contain; }
@@ -83,18 +84,31 @@
     #pmb-content .pmb-fee-tabs .nav-link.active .badge { color: #315efb !important; }
     .pmb-status-select { min-width: 145px; border-color: #dce4f0; font-size: .82rem; }
     .pmb-status-select:focus { border-color: #5d87ff; box-shadow: 0 0 0 .2rem rgba(93, 135, 255, .14); }
+    .pmb-desil-select { width: 145px; border-color: #dce4f0; color: #4265dc; font-size: .8rem; }
+    .pmb-desil-select:focus { border-color: #5d87ff; box-shadow: 0 0 0 .2rem rgba(93, 135, 255, .14); }
     @media (max-width: 991.98px) {
-        .pmb-registrations-responsive { overflow: visible; border: 0; }
-        .pmb-registrations-responsive table { min-width: 0 !important; width: 100% !important; }
+        .pmb-registrations-responsive,
+        .pmb-registrations-responsive .dataTables_wrapper { width: 100%; max-width: 100%; min-width: 0; overflow: visible; border: 0; }
+        .pmb-registrations-responsive table { display: block; table-layout: fixed; min-width: 0 !important; max-width: 100% !important; width: 100% !important; }
         .pmb-registrations-responsive thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
         .pmb-registrations-responsive tbody { display: block; }
-        .pmb-registrations-responsive tbody tr { display: block; margin-bottom: .9rem; padding: .35rem .75rem; border: 1px solid #e8edf5; border-radius: .85rem; background: #fff; box-shadow: 0 4px 14px rgba(31, 54, 91, .06); }
-        .pmb-registrations-responsive tbody td { display: flex !important; align-items: flex-start; justify-content: space-between; gap: 1rem; width: 100% !important; padding: .65rem 0; border: 0 !important; border-bottom: 1px solid #f0f2f6 !important; white-space: normal !important; }
-        .pmb-registrations-responsive tbody td::before { content: attr(data-label); flex: 0 0 32%; color: #7a869a; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .025em; }
-        .pmb-registrations-responsive tbody td[data-label="Status seleksi"] form { flex: 1; }
+        .pmb-registrations-responsive tbody tr { display: block; box-sizing: border-box; width: 100%; max-width: 100%; margin-bottom: .9rem; padding: .45rem .75rem; overflow: hidden; border: 1px solid #e8edf5; border-radius: .85rem; background: #fff; box-shadow: 0 4px 14px rgba(31, 54, 91, .06); }
+        .pmb-registrations-responsive tbody td { display: block !important; box-sizing: border-box; width: 100% !important; max-width: 100%; padding: .65rem 0; overflow-wrap: anywhere; border: 0 !important; border-bottom: 1px solid #f0f2f6 !important; white-space: normal !important; }
+        .pmb-registrations-responsive tbody td::before { display: block; margin-bottom: .45rem; content: attr(data-label); color: #7a869a; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .025em; }
+        .pmb-registrations-responsive tbody td[data-label="Status seleksi"] form { width: 100%; }
         .pmb-registrations-responsive tbody td[data-label="Status seleksi"] select { width: 100%; }
+        .pmb-registrations-responsive .pmb-registration-documents { width: 100%; }
+        .pmb-registrations-responsive .pmb-document-chip { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+        .pmb-registrations-responsive tbody td[data-label="Pembayaran"] > div { width: 100%; }
+        .pmb-registrations-responsive tbody td[data-label="Aksi"] { display: flex !important; flex-wrap: wrap; gap: .5rem; }
+        .pmb-registrations-responsive tbody td[data-label="Aksi"]::before { flex: 0 0 100%; }
         .pmb-registrations-responsive tbody td:last-child { border-bottom: 0 !important; }
-        .pmb-document-chip { white-space: normal; }
+        .pmb-registrations-responsive .dataTables_wrapper .row { --bs-gutter-x: .5rem; max-width: 100%; }
+        .pmb-registrations-responsive .dt-buttons { display: flex; flex-wrap: wrap; gap: .35rem; max-width: 100%; }
+        .pmb-registrations-responsive .dataTables_filter { width: 100%; margin-top: .35rem; text-align: left !important; }
+        .pmb-registrations-responsive .dataTables_filter label,
+        .pmb-registrations-responsive .dataTables_filter input { width: 100%; margin-left: 0 !important; }
+        .pmb-registrations-responsive .dataTables_info { white-space: normal; }
     }
     @media (max-width: 575.98px) {
         #pmb-admin .pmb-admin-hero { margin-bottom: .75rem !important; border-radius: .8rem; }
@@ -267,6 +281,7 @@
             ['nama_mahasiswa', 'Nama pendaftar', 'text'], ['nik', 'NIK', 'text'],
             ['jenis_kelamin', 'Jenis kelamin', 'select', [['', 'Belum diisi'], ['L', 'Laki-laki'], ['P', 'Perempuan']]],
             ['handphone', 'Nomor handphone', 'text'],
+            ['desil', 'Kategori desil', 'select', [['', 'Belum ditentukan'], ...Array.from({ length: 10 }, (_, index) => [String(index + 1), `Desil ${index + 1}`])]],
             ['status', 'Status pendaftaran', 'select', [['draft', 'Draft'], ['berkas_masuk', 'Berkas masuk'], ['review', 'Dalam review'], ['sudah_ujian', 'Sudah ujian'], ['lulus', 'Lulus'], ['diterima', 'Diterima'], ['ditolak', 'Ditolak'], ['mundur', 'Mundur']]],
         ],
         fees: [
@@ -289,6 +304,20 @@
     };
 
     const message = (text, error = false) => {
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: error ? 'error' : 'success',
+                title: text,
+                showConfirmButton: false,
+                timer: error ? 5000 : 3200,
+                timerProgressBar: true,
+            });
+            feedback.className = 'alert d-none';
+            return;
+        }
+
         feedback.textContent = text;
         feedback.className = `alert alert-${error ? 'danger' : 'success'}`;
     };
@@ -485,6 +514,45 @@
     });
 
     root.addEventListener('change', async (event) => {
+        const desilSelect = event.target.closest('[data-registration-desil]');
+        if (desilSelect) {
+            const form = desilSelect.form;
+            const previousDesil = desilSelect.dataset.currentDesil;
+            const nextDesil = desilSelect.value;
+            const confirmation = await Swal.fire({
+                title: 'Simpan perubahan desil?',
+                text: nextDesil ? `Kategori mahasiswa akan diubah menjadi Desil ${nextDesil}.` : 'Kategori desil mahasiswa akan dikosongkan.',
+                icon: 'question', showCancelButton: true,
+                confirmButtonText: 'Ya, simpan', cancelButtonText: 'Batal', confirmButtonColor: '#5d87ff',
+            });
+            if (!confirmation.isConfirmed) {
+                desilSelect.value = previousDesil;
+                return;
+            }
+
+            desilSelect.disabled = true;
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST', body: new FormData(form),
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                    credentials: 'same-origin',
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    const errors = Object.values(result.errors || {}).flat();
+                    throw new Error(errors.join(' ') || result.message || 'Desil gagal diperbarui.');
+                }
+                desilSelect.dataset.currentDesil = nextDesil;
+                message(result.message || 'Desil calon mahasiswa berhasil diperbarui.');
+            } catch (error) {
+                desilSelect.value = previousDesil;
+                message(error.message || 'Desil gagal diperbarui.', true);
+            } finally {
+                desilSelect.disabled = false;
+            }
+            return;
+        }
+
         const select = event.target.closest('[data-registration-status-form] select[name="status"]');
         if (!select) return;
 

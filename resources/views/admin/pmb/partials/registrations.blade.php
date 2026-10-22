@@ -7,6 +7,19 @@
                 {{ $registration->candidate?->user?->email ?? $registration->candidate?->email ?? 'Email tidak tersedia' }}
                 · {{ $registration->candidate?->handphone ?: 'Nomor HP belum diisi' }}
             </small>
+            @can('pmb-registration-manage')
+                <form method="POST" action="{{ route('admin.pmb.registrations.desil', $registration->id) }}" data-registration-desil-form class="mt-2">
+                    @csrf @method('PATCH')
+                    <select class="form-select form-select-sm pmb-desil-select" name="desil" data-registration-desil data-current-desil="{{ $registration->candidate?->desil ?? '' }}" aria-label="Kategori desil mahasiswa">
+                        <option value="" @selected(empty($registration->candidate?->desil))>Pilih desil</option>
+                        @for($desil = 1; $desil <= 10; $desil++)
+                            <option value="{{ $desil }}" @selected((int) ($registration->candidate?->desil ?? 0) === $desil)>Desil {{ $desil }}</option>
+                        @endfor
+                    </select>
+                </form>
+            @else
+                <br><span class="badge {{ $registration->candidate?->desil ? 'bg-info-subtle text-info' : 'bg-light text-muted' }} mt-1">{{ $registration->candidate?->desil ? 'Desil '.$registration->candidate->desil : 'Desil belum ditentukan' }}</span>
+            @endcan
         </td>
         <td data-label="Periode / Jalur / Prodi">
             {{ $registration->period?->nama_periode ?? 'Periode tidak tersedia' }}<br>
@@ -34,6 +47,7 @@
             @endcan
         </td>
         <td data-label="Berkas">
+            <div class="pmb-registration-documents">
             @forelse($registration->documents as $document)
                 @php
                     $documentStatusLabel = ['pending' => 'Menunggu', 'valid' => 'Disetujui', 'invalid' => 'Perbaikan'][$document->status_verifikasi] ?? ucfirst($document->status_verifikasi);
@@ -61,6 +75,7 @@
             @empty
                 <small class="text-muted">Belum diunggah</small>
             @endforelse
+            </div>
         </td>
         <td data-label="Pembayaran">
             @forelse($registration->payments as $payment)
@@ -91,7 +106,7 @@
         </td>
         <td class="text-nowrap" data-label="Aksi">
             @can('pmb-registration-manage')
-                <button type="button" class="btn btn-sm btn-light-primary text-primary" data-pmb-edit data-update-url="{{ route('admin.pmb.registrations.update', $registration->id) }}" data-payload="{{ json_encode(['record' => ['nama_mahasiswa' => $registration->candidate?->nama_mahasiswa, 'nik' => $registration->candidate?->nik, 'jenis_kelamin' => $registration->candidate?->jenis_kelamin, 'handphone' => $registration->candidate?->handphone, 'status' => $registration->status]]) }}"><i class="ti ti-edit"></i> Edit</button>
+                <button type="button" class="btn btn-sm btn-light-primary text-primary" data-pmb-edit data-update-url="{{ route('admin.pmb.registrations.update', $registration->id) }}" data-payload="{{ json_encode(['record' => ['nama_mahasiswa' => $registration->candidate?->nama_mahasiswa, 'nik' => $registration->candidate?->nik, 'jenis_kelamin' => $registration->candidate?->jenis_kelamin, 'handphone' => $registration->candidate?->handphone, 'desil' => $registration->candidate?->desil, 'status' => $registration->status]]) }}"><i class="ti ti-edit"></i> Edit</button>
                 <button type="button" class="btn btn-sm btn-light-danger text-danger" data-pmb-delete data-delete-url="{{ route('admin.pmb.registrations.destroy', $registration->id) }}"><i class="ti ti-trash"></i> Hapus</button>
             @else
                 <span class="text-muted">—</span>

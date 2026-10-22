@@ -3,8 +3,8 @@
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4"><div><h4 class="fw-semibold mb-1">Soal: {{ $exam->title }}</h4><p class="text-muted mb-0">Pilihan jawaban dapat berupa teks, gambar, atau gabungan keduanya.</p></div><a class="btn btn-light" href="{{ route('admin.cbt.index') }}">Kembali ke ujian</a></div>
-    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+    @if(session('success'))<div class="alert alert-success" data-app-toast>{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="alert alert-danger" data-app-toast>{{ $errors->first() }}</div>@endif
     @if($exam->is_published)<div class="alert alert-warning">Ujian sedang terbit. Tarik publikasi terlebih dahulu untuk mengubah soal.</div>@else
     <div class="card"><div class="card-body"><h5 class="card-title">Tambah soal</h5>
         <form method="POST" enctype="multipart/form-data" action="{{ route('admin.cbt.questions.store', $exam->id) }}" class="row g-3">

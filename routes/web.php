@@ -170,6 +170,9 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::patch('/registrations/{registrationId}/status', [PmbController::class, 'updateRegistrationStatus'])
         ->middleware('can:pmb-review')
         ->name('registrations.status');
+    Route::patch('/registrations/{registrationId}/desil', [PmbController::class, 'updateCandidateDesil'])
+        ->middleware('can:pmb-registration-manage')
+        ->name('registrations.desil');
     Route::put('/registrations/{registrationId}', [PmbController::class, 'updateRegistrationDetails'])
         ->middleware('can:pmb-registration-manage')
         ->name('registrations.update');
@@ -181,10 +184,31 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
         ->name('payments.verify');
 });
 
-Route::get('/', function () {
-    $referral = \App\Models\Pmb\Referral::where('owner_id', Auth::id())->where('is_active', true)->first();
-    return view('dashboard', compact('referral'));
-})->middleware(['auth', 'verified', '2fa'])->name('dashboard');
+Route::get('/informasi-jalur-pmb', function () {
+    $admissionSchedules = collect();
+
+    if (\Illuminate\Support\Facades\Schema::hasTable('pmb_period_path_schedules')) {
+        $admissionSchedules = \App\Models\Pmb\PeriodPathSchedule::query()
+            ->with(['period', 'path'])
+            ->where('is_active', true)
+            ->whereDate('tanggal_selesai', '>=', today())
+            ->whereHas('period', fn ($query) => $query->where('is_active', true))
+            ->whereHas('path')
+            ->orderBy('tanggal_mulai')
+            ->get();
+    }
+
+    $openAdmissionSchedules = $admissionSchedules
+        ->filter(fn ($schedule) => $schedule->tanggal_mulai->lte(today()))
+        ->values();
+    $upcomingAdmissionSchedules = $admissionSchedules
+        ->filter(fn ($schedule) => $schedule->tanggal_mulai->gt(today()))
+        ->values();
+
+    return view('pmb.admissions', compact('openAdmissionSchedules', 'upcomingAdmissionSchedules'));
+})->name('pmb.admissions');
+
+Route::view('/', 'pmb.landing')->name('home');
 
 // Halaman Utama setelah lolos semua gerbang keamanan
 Route::get('/dashboard', function () {
