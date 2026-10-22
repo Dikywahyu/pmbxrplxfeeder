@@ -1,36 +1,36 @@
 @extends('layouts.pmb-public')
 
 @section('title', 'PMB Universitas (Uk) Cipta Wacana | Pendaftaran Mahasiswa Baru')
-@section('meta_description', 'Daftar kuliah di Universitas Cipta Wacana. Temukan informasi jalur dan jadwal PMB, persyaratan, program studi, serta alur pendaftaran mahasiswa baru online.')
+@section('meta_description', 'Daftar kuliah di Universitas (UK) Cipta Wacana. Temukan informasi jalur dan jadwal PMB, persyaratan, program studi, serta alur pendaftaran mahasiswa baru online.')
 @section('canonical_url', route('home'))
 
 @push('meta')
 @php
-    $pmbStructuredData = [
-        '@context' => 'https://schema.org',
-        '@graph' => [
-            [
-                '@type' => 'CollegeOrUniversity',
-                '@id' => route('home').'#university',
-                'name' => 'Universitas Cipta Wacana',
-                'url' => route('home'),
-                'logo' => asset('logo.png'),
-                'description' => 'Informasi Penerimaan Mahasiswa Baru Universitas Cipta Wacana, termasuk jadwal, jalur pendaftaran, persyaratan, dan proses seleksi.',
-                'sameAs' => ['https://cwcu.ac.id/'],
-            ],
-            [
-                '@type' => 'WebSite',
-                '@id' => route('home').'#website',
-                'url' => route('home'),
-                'name' => 'PMB Universitas Cipta Wacana',
-                'inLanguage' => 'id-ID',
-                'publisher' => ['@id' => route('home').'#university'],
-            ],
-        ],
-    ];
+$pmbStructuredData = [
+'@context' => 'https://schema.org',
+'@graph' => [
+[
+'@type' => 'CollegeOrUniversity',
+'@id' => route('home').'#university',
+'name' => 'Universitas (UK) Cipta Wacana',
+'url' => route('home'),
+'logo' => asset('logo.png'),
+'description' => 'Informasi Penerimaan Mahasiswa Baru Universitas (UK) Cipta Wacana, termasuk jadwal, jalur pendaftaran, persyaratan, dan proses seleksi.',
+'sameAs' => ['https://cwcu.ac.id/'],
+],
+[
+'@type' => 'WebSite',
+'@id' => route('home').'#website',
+'url' => route('home'),
+'name' => 'PMB Universitas (UK) Cipta Wacana',
+'inLanguage' => 'id-ID',
+'publisher' => ['@id' => route('home').'#university'],
+],
+],
+];
 @endphp
 <script type="application/ld+json">
-    {{ json_encode($pmbStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}
+{{ json_encode($pmbStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}
 </script>
 @endpush
 
@@ -627,8 +627,8 @@
 <header class="pmb-public-nav">
     <div class="container d-flex align-items-center justify-content-between gap-3">
         <a class="d-flex align-items-center gap-2 text-decoration-none" href="{{ route('home') }}" aria-label="Beranda PMB">
-            <img class="pmb-public-logo" src="{{ asset('logo.png') }}" alt="Logo Universitas Cipta Wacana">
-            <span class="pmb-public-brand">Universitas Cipta Wacana<small>PENERIMAAN MAHASISWA BARU</small></span>
+            <img class="pmb-public-logo" src="{{ asset('logo.png') }}" alt="Logo Universitas (UK) Cipta Wacana">
+            <span class="pmb-public-brand">Universitas (UK) Cipta Wacana<small>PENERIMAAN MAHASISWA BARU</small></span>
         </a>
         <nav class="pmb-nav-links d-flex align-items-center gap-3 gap-lg-4">
             <a class="nav-extra" href="#tentang">Tentang</a>
@@ -644,7 +644,7 @@
         <div class="container pmb-hero-content">
             <span class="pmb-hero-kicker"><i class="ti ti-sparkles"></i> Penerimaan Mahasiswa Baru</span>
             <h1>Siapkan masa depan,<br>mulai dari sini.</h1>
-            <p>Jelajahi pilihan program studi Universitas Cipta Wacana dan ikuti proses pendaftaran mahasiswa baru secara online.</p>
+            <p>Jelajahi pilihan program studi Universitas (UK) Cipta Wacana dan ikuti proses pendaftaran mahasiswa baru secara online.</p>
             <div class="pmb-hero-actions d-flex flex-wrap align-items-center gap-2 mt-4">
                 <a class="btn btn-light btn-lg fw-semibold rounded-pill px-4" href="{{ $startUrl }}"><i class="ti ti-arrow-right me-1"></i>{{ auth()->check() ? 'Buka pendaftaran' : 'Daftar sekarang' }}</a>
                 <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="#alur">Lihat alur PMB</a>
@@ -657,7 +657,7 @@
         <div class="container">
             <div class="row align-items-center g-4 g-lg-5">
                 <div class="col-12 col-lg-5">
-                    <div class="pmb-welcome-art"><img src="https://cwcu.ac.id/theme/assets/img/logo2.png" alt="Lambang Universitas Cipta Wacana"></div>
+                    <div class="pmb-welcome-art"><img src="https://cwcu.ac.id/theme/assets/img/logo2.png" alt="Lambang Universitas (UK) Cipta Wacana"></div>
                 </div>
                 <div class="col-12 col-lg-7 pmb-welcome-copy">
                     <span class="pmb-section-heading eyebrow text-start d-block mb-2">SELAMAT DATANG</span>
@@ -745,7 +745,7 @@
 
 <footer class="pmb-public-footer">
     <div class="container d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
-        <div class="d-flex align-items-center gap-2"><img class="pmb-footer-logo" src="{{ asset('logo.png') }}" alt=""><span>Portal Penerimaan Mahasiswa Baru<br><strong>Universitas Cipta Wacana</strong></span></div><span>Jl. Karel Satsuit Tubun No. 28A, Malang</span>
+        <div class="d-flex align-items-center gap-2"><img class="pmb-footer-logo" src="{{ asset('logo.png') }}" alt=""><span>Portal Penerimaan Mahasiswa Baru<br><strong>Universitas (UK) Cipta Wacana</strong></span></div><span>Jl. Karel Satsuit Tubun No. 28A, Malang</span>
     </div>
 </footer>
 @endsection
