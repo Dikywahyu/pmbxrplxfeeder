@@ -4,6 +4,7 @@
 
 @section('content')
 @push('styles')
+<link rel="stylesheet" href="{{ asset('dist/assets/libs/select2/dist/css/select2.min.css') }}">
 <style>
     #pmb-admin .pmb-admin-hero { position: relative; overflow: hidden; border: 0; border-radius: 1rem; background: linear-gradient(115deg, #315efb 0%, #6545d8 52%, #9b4bd6 100%); box-shadow: 0 12px 30px rgba(72, 84, 210, .2); }
     #pmb-admin .pmb-admin-hero::before, #pmb-admin .pmb-admin-hero::after { position: absolute; content: ''; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; pointer-events: none; }
@@ -14,6 +15,10 @@
     #pmb-admin .pmb-admin-hero h4 { color: #fff; font-size: clamp(1.25rem, 2vw, 1.65rem); }
     #pmb-admin .pmb-admin-hero p { color: rgba(255,255,255,.82) !important; }
     #pmb-admin .pmb-shell-card { border: 1px solid #edf0f7; border-radius: 1rem; box-shadow: 0 8px 24px rgba(33, 52, 91, .055); }
+    #pmb-content .select2-container { width:100%!important; }
+    #pmb-content .select2-container .select2-selection--single { height:38px; border:1px solid #dfe5ef; border-radius:.375rem; }
+    #pmb-content .select2-container--default .select2-selection--single .select2-selection__rendered { line-height:36px; color:#5a6a85; padding-left:.75rem; }
+    #pmb-content .select2-container--default .select2-selection--single .select2-selection__arrow { height:36px; }
     #pmb-content .pmb-stat-card { position: relative; min-height: 150px; overflow: hidden; border: 0; border-radius: 1rem; box-shadow: 0 8px 20px rgba(31, 49, 81, .08); transition: transform .18s ease, box-shadow .18s ease; }
     #pmb-content .pmb-stat-card:hover { transform: translateY(-3px); box-shadow: 0 13px 25px rgba(31, 49, 81, .14); }
     #pmb-content .pmb-stat-card::after { position: absolute; width: 130px; height: 130px; right: -48px; bottom: -67px; border: 20px solid rgba(255,255,255,.17); border-radius: 50%; content: ''; }
@@ -238,6 +243,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('dist/assets/libs/select2/dist/js/select2.min.js') }}"></script>
 <script>
 (() => {
     const root = document.getElementById('pmb-admin');
@@ -428,6 +434,7 @@
             });
         }
         content.innerHTML = result.html;
+        initializeReferenceInputs();
         initializeTables();
         if (section === 'fees') {
             setupFeeBulk();
@@ -506,6 +513,36 @@
                 chart.render();
             }
         }
+    };
+
+    const initializeReferenceInputs = () => {
+        if (!window.jQuery || !$.fn.select2) return;
+        $(content).find('[data-wilayah-select]').each(function () {
+            const select = $(this);
+            if (select.hasClass('select2-hidden-accessible')) return;
+            select.select2({
+                width: '100%',
+                placeholder: 'Cari nama kecamatan...',
+                allowClear: true,
+                minimumInputLength: 2,
+                dropdownParent: $(content),
+                ajax: {
+                    url: select.data('ajax-url'),
+                    dataType: 'json',
+                    delay: 250,
+                    data: (params) => ({ q: params.term || '', page: params.page || 1 }),
+                    processResults: (data) => data,
+                    cache: true,
+                },
+            });
+        });
+        $(content).find('[data-income-select]').each(function () {
+            const select = this;
+            $(select).off('change.pmbIncome').on('change.pmbIncome', () => {
+                const target = content.querySelector(`[data-income-name="${select.dataset.incomeSelect}"]`);
+                if (target) target.value = select.selectedOptions[0]?.dataset.name || '';
+            });
+        });
     };
 
     document.getElementById('pmb-reload').addEventListener('click', async () => {

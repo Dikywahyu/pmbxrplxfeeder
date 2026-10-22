@@ -1,5 +1,50 @@
 @extends('layouts.app')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('dist/assets/libs/select2/dist/css/select2.min.css') }}">
+<style>
+    .pmb-select2-wrap .select2-container { width:100%!important; }
+    .pmb-select2-wrap .select2-container .select2-selection--single { height:38px; border:1px solid #dfe5ef; border-radius:.375rem; }
+    .pmb-select2-wrap .select2-container--default .select2-selection--single .select2-selection__rendered { line-height:36px; color:#5a6a85; padding-left:.75rem; }
+    .pmb-select2-wrap .select2-container--default .select2-selection--single .select2-selection__arrow { height:36px; }
+</style>
+@endpush
+
+@push('scripts')
+<script src="{{ asset('dist/assets/libs/select2/dist/js/select2.min.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.jQuery || !jQuery.fn.select2) return;
+        const $wilayah = jQuery('[data-wilayah-select]');
+        if (!$wilayah.length) return;
+        $wilayah.select2({
+            width: '100%',
+            placeholder: 'Cari nama kecamatan...',
+            allowClear: true,
+            minimumInputLength: 2,
+            ajax: {
+                url: $wilayah.data('ajax-url'),
+                dataType: 'json',
+                delay: 250,
+                data: (params) => ({ q: params.term || '', page: params.page || 1 }),
+                processResults: (data) => data,
+                cache: true,
+            },
+            language: { inputTooShort: () => 'Ketik minimal 2 karakter untuk mencari kecamatan.' },
+        });
+
+        document.querySelectorAll('[data-income-select]').forEach((select) => {
+            const syncIncomeName = () => {
+                const nameInput = document.querySelector(`[data-income-name="${select.dataset.incomeSelect}"]`);
+                if (nameInput) nameInput.value = select.selectedOptions[0]?.dataset.name || '';
+            };
+            select.addEventListener('change', syncIncomeName);
+            syncIncomeName();
+        });
+    });
+</script>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="card bg-primary-subtle shadow-none mb-4">
@@ -95,7 +140,8 @@
                         </select></div>
                     <div class="col-md-3"><label class="form-label">Tempat lahir</label><input class="form-control" name="tempat_lahir" value="{{ old('tempat_lahir', $candidate->tempat_lahir ?? '') }}"></div>
                     <div class="col-md-3"><label class="form-label">Tanggal lahir</label><input class="form-control" type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $candidate?->tanggal_lahir?->format('Y-m-d')) }}"></div>
-                    <div class="col-md-3"><label class="form-label">Kode agama (DIKTI)</label><input class="form-control" name="id_agama" value="{{ old('id_agama', $candidate->id_agama ?? '') }}" maxlength="5"></div>
+                    <div class="col-md-3"><label class="form-label">Agama</label><select class="form-select" name="id_agama"><option value="">Pilih agama</option>@foreach($agamaOptions as $agama)<option value="{{ $agama->id_agama }}" @selected(old('id_agama', $candidate->id_agama ?? '') == $agama->id_agama)>{{ $agama->nama_agama }}</option>@endforeach</select></div>
+                    <div class="col-md-3"><label class="form-label">Alat transportasi</label><select class="form-select" name="id_alat_transportasi"><option value="">Pilih transportasi</option>@foreach($transportOptions as $transport)<option value="{{ $transport->id_alat_transportasi }}" @selected(old('id_alat_transportasi', $candidate->id_alat_transportasi ?? '') == $transport->id_alat_transportasi)>{{ $transport->nama_alat_transportasi }}</option>@endforeach</select></div>
 
                     <div class="col-12 mt-4">
                         <h6 class="text-primary mb-0">Alamat dan kontak</h6>
@@ -106,7 +152,7 @@
                     <div class="col-md-1"><label class="form-label">RW</label><input class="form-control" name="rw" value="{{ old('rw', $candidate->rw ?? '') }}"></div>
                     <div class="col-md-1"><label class="form-label">Kode pos</label><input class="form-control" name="kode_pos" value="{{ old('kode_pos', $candidate->kode_pos ?? '') }}"></div>
                     <div class="col-md-4"><label class="form-label">Kelurahan / desa</label><input class="form-control" name="kelurahan" value="{{ old('kelurahan', $candidate->kelurahan ?? '') }}"></div>
-                    <div class="col-md-4"><label class="form-label">Kode wilayah / kecamatan</label><input class="form-control" name="id_wilayah" value="{{ old('id_wilayah', $candidate->id_wilayah ?? '') }}" maxlength="10"></div>
+                    <div class="col-md-4 pmb-select2-wrap"><label class="form-label">Kecamatan</label><select class="form-select" name="id_wilayah" data-wilayah-select data-ajax-url="{{ route('pmb.reference.wilayahs') }}"><option value="">Cari nama kecamatan...</option>@if($candidateRegion)<option value="{{ $candidateRegion->id_wilayah }}" selected>{{ $candidateRegion->nama_wilayah }}</option>@endif</select><small class="text-muted">Ketik minimal 2 karakter untuk mencari wilayah.</small></div>
                     <div class="col-md-4"><label class="form-label">Kode negara</label><input class="form-control" name="id_negara" value="{{ old('id_negara', $candidate->id_negara ?? 'ID') }}" maxlength="5"></div>
                     <div class="col-md-4"><label class="form-label">Nomor HP</label><input class="form-control" name="handphone" value="{{ old('handphone', $candidate->handphone ?? '') }}"></div>
                     <div class="col-md-4"><label class="form-label">Telepon</label><input class="form-control" name="telepon" value="{{ old('telepon', $candidate->telepon ?? '') }}"></div>
@@ -137,7 +183,13 @@
                         <h6 class="text-primary mb-0">{{ $group['title'] }}</h6>
                     </div>
                     @foreach($group['fields'] as $field)
+                    @if(str_starts_with($field[0], 'id_penghasilan_'))
+                    @php($incomeNameField = str_replace('id_', 'nama_', $field[0]))
+                    <div class="col-md-3"><label class="form-label">Penghasilan {{ strtolower($group['title'] === 'Data ayah' ? 'ayah' : ($group['title'] === 'Data ibu kandung' ? 'ibu' : 'wali')) }}</label><select class="form-select" name="{{ $field[0] }}" data-income-select="{{ $field[0] }}"><option value="">Pilih penghasilan</option>@foreach($incomeOptions as $income)<option value="{{ $income->id_penghasilan }}" data-name="{{ $income->nama_penghasilan }}" @selected(old($field[0], $candidate->{$field[0]} ?? '') == $income->id_penghasilan)>{{ $income->nama_penghasilan }}</option>@endforeach</select><input type="hidden" name="{{ $incomeNameField }}" value="{{ old($incomeNameField, $candidate->{$incomeNameField} ?? '') }}" data-income-name="{{ $field[0] }}"></div>
+                    @elseif(str_starts_with($field[0], 'nama_penghasilan_'))
+                    @else
                     <div class="col-md-3"><label class="form-label">{{ $field[1] }}</label><input class="form-control" name="{{ $field[0] }}" type="{{ $field[2] ?? 'text' }}" value="{{ old($field[0], $candidate->{$field[0]} ?? '') }}"></div>
+                    @endif
                     @endforeach
                     @endforeach
 

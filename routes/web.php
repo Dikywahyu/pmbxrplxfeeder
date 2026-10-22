@@ -98,6 +98,7 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware(['auth'])->prefix('pmb')->name('pmb.')->group(function () {
     Route::get('/', [PmbController::class, 'index'])->name('index');
+    Route::get('/reference/wilayahs', [PmbController::class, 'searchWilayah'])->name('reference.wilayahs');
     Route::get('/exams', [CbtController::class, 'index'])->name('exams.index');
     Route::post('/exams/{examId}/registrations/{registrationId}/start', [CbtController::class, 'start'])->name('exams.start');
     Route::get('/exams/attempts/{attemptId}', [CbtController::class, 'take'])->name('exams.take');

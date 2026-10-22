@@ -19,6 +19,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class PmbMarketingController extends Controller
 {
@@ -145,7 +146,8 @@ class PmbMarketingController extends Controller
             'jenis_kelamin' => ['required', 'in:L,P'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date', 'before:today'],
-            'id_agama' => ['nullable', 'string', 'max:5'],
+            'id_agama' => ['nullable', Rule::exists('agamas', 'id_agama')],
+            'id_alat_transportasi' => ['nullable', Rule::exists('alat_transportasis', 'id_alat_transportasi')],
             'telepon' => ['nullable', 'string', 'max:20'],
             'jalan' => ['required', 'string', 'max:255'],
             'dusun' => ['nullable', 'string', 'max:255'],
@@ -153,7 +155,7 @@ class PmbMarketingController extends Controller
             'rw' => ['nullable', 'string', 'max:5'],
             'kelurahan' => ['required', 'string', 'max:255'],
             'kode_pos' => ['nullable', 'string', 'max:10'],
-            'id_wilayah' => ['nullable', 'string', 'max:10'],
+            'id_wilayah' => ['nullable', Rule::exists('wilayahs', 'id_wilayah')->where('id_negara', 'ID')->where('id_level_wilayah', '3')],
             'id_negara' => ['nullable', 'string', 'max:5'],
             'nomor_daftar_kip' => ['nullable', 'string', 'max:90'],
             'nomor_kip' => ['nullable', 'string', 'max:50'],
@@ -168,7 +170,7 @@ class PmbMarketingController extends Controller
             'nama_pendidikan_ayah' => ['nullable', 'string', 'max:255'],
             'id_pekerjaan_ayah' => ['nullable', 'string', 'max:5'],
             'nama_pekerjaan_ayah' => ['nullable', 'string', 'max:255'],
-            'id_penghasilan_ayah' => ['nullable', 'string', 'max:5'],
+            'id_penghasilan_ayah' => ['nullable', Rule::exists('penghasilans', 'id_penghasilan')],
             'nama_penghasilan_ayah' => ['nullable', 'string', 'max:255'],
             'nama_ibu_kandung' => ['required', 'string', 'max:255'],
             'nik_ibu' => ['nullable', 'string', 'max:20'],
@@ -177,7 +179,7 @@ class PmbMarketingController extends Controller
             'nama_pendidikan_ibu' => ['nullable', 'string', 'max:255'],
             'id_pekerjaan_ibu' => ['nullable', 'string', 'max:5'],
             'nama_pekerjaan_ibu' => ['nullable', 'string', 'max:255'],
-            'id_penghasilan_ibu' => ['nullable', 'string', 'max:5'],
+            'id_penghasilan_ibu' => ['nullable', Rule::exists('penghasilans', 'id_penghasilan')],
             'nama_penghasilan_ibu' => ['nullable', 'string', 'max:255'],
             'nama_wali' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir_wali' => ['nullable', 'date', 'before:today'],
@@ -185,7 +187,7 @@ class PmbMarketingController extends Controller
             'nama_pendidikan_wali' => ['nullable', 'string', 'max:255'],
             'id_pekerjaan_wali' => ['nullable', 'string', 'max:5'],
             'nama_pekerjaan_wali' => ['nullable', 'string', 'max:255'],
-            'id_penghasilan_wali' => ['nullable', 'string', 'max:5'],
+            'id_penghasilan_wali' => ['nullable', Rule::exists('penghasilans', 'id_penghasilan')],
             'nama_penghasilan_wali' => ['nullable', 'string', 'max:255'],
             'fee_id' => ['required', 'integer', 'exists:pmb_fees,id'],
         ], [
@@ -194,6 +196,12 @@ class PmbMarketingController extends Controller
         ]);
         $data['email'] = filled($data['email'] ?? null) ? mb_strtolower(trim($data['email'])) : null;
         $data['id_negara'] = filled($data['id_negara'] ?? null) ? $data['id_negara'] : 'ID';
+        foreach (['ayah', 'ibu', 'wali'] as $parent) {
+            $incomeId = $data['id_penghasilan_'.$parent] ?? null;
+            $data['nama_penghasilan_'.$parent] = $incomeId
+                ? DB::table('penghasilans')->where('id_penghasilan', $incomeId)->value('nama_penghasilan')
+                : null;
+        }
 
         if (Candidate::where('nik', $data['nik'])->exists()) {
             throw ValidationException::withMessages([

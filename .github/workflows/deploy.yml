@@ -25,6 +25,7 @@ jobs:
             
             # Jalankan perintah optimasi khusus Laravel
             composer install --no-dev --optimize-autoloader
+            php artisan migrate
             php artisan config:clear
             php artisan cache:clear
             php artisan route:clear

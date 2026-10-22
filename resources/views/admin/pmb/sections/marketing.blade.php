@@ -49,15 +49,18 @@
                             </div>
 
                             @php($marketingOptionalBio = [
-                                ['nisn', 'NISN', 'text', 20], ['npwp', 'NPWP', 'text', 25], ['id_agama', 'Kode agama DIKTI', 'text', 5],
+                                ['nisn', 'NISN', 'text', 20], ['npwp', 'NPWP', 'text', 25],
                                 ['telepon', 'Telepon', 'text', 20], ['dusun', 'Dusun', 'text', 255], ['rt', 'RT', 'text', 5], ['rw', 'RW', 'text', 5],
-                                ['kode_pos', 'Kode pos', 'text', 10], ['id_wilayah', 'Kode wilayah / kecamatan', 'text', 10], ['id_negara', 'Kode negara', 'text', 5],
+                                ['kode_pos', 'Kode pos', 'text', 10], ['id_negara', 'Kode negara', 'text', 5],
                             ])
                             <div class="col-12">
                                 <details class="marketing-optional-section">
                                     <summary><i class="ti ti-address-book me-1 text-info"></i>Data biodata tambahan <span class="text-muted fw-normal">(opsional)</span></summary>
                                     <div class="marketing-optional-body"><div class="row g-2">
                                         <div class="col-12 col-md-6"><label class="form-label" for="marketing-email">Email kontak</label><input class="form-control" id="marketing-email" type="email" name="email" maxlength="255"><small class="text-muted">Mahasiswa dapat memakai email akun yang berbeda saat klaim.</small></div>
+                                        <div class="col-6 col-md-3"><label class="form-label" for="marketing-id-agama">Agama</label><select class="form-select" id="marketing-id-agama" name="id_agama"><option value="">Pilih agama</option>@foreach($agamaOptions as $agama)<option value="{{ $agama->id_agama }}">{{ $agama->nama_agama }}</option>@endforeach</select></div>
+                                        <div class="col-6 col-md-3"><label class="form-label" for="marketing-id-transport">Alat transportasi</label><select class="form-select" id="marketing-id-transport" name="id_alat_transportasi"><option value="">Pilih transportasi</option>@foreach($transportOptions as $transport)<option value="{{ $transport->id_alat_transportasi }}">{{ $transport->nama_alat_transportasi }}</option>@endforeach</select></div>
+                                        <div class="col-12 col-md-6"><label class="form-label" for="marketing-id-wilayah">Kecamatan</label><select class="form-select" id="marketing-id-wilayah" name="id_wilayah" data-wilayah-select data-ajax-url="{{ route('pmb.reference.wilayahs') }}"><option value="">Cari nama kecamatan...</option></select><small class="text-muted">Ketik minimal 2 karakter.</small></div>
                                         @foreach($marketingOptionalBio as $field)
                                             @php($fieldId = 'marketing-'.str_replace('_', '-', $field[0]))
                                             <div class="col-6 col-md-3"><label class="form-label" for="{{ $fieldId }}">{{ $field[1] }}</label><input class="form-control" id="{{ $fieldId }}" name="{{ $field[0] }}" type="{{ $field[2] }}" maxlength="{{ $field[3] }}" @if($field[0] === 'id_negara') value="ID" @endif></div>
@@ -90,7 +93,13 @@
                                     <div class="marketing-optional-body"><div class="row g-2">
                                         @foreach($marketingFamilyFields as $field)
                                             @php($fieldId = 'marketing-'.str_replace('_', '-', $field[0]))
+                                            @if(str_starts_with($field[0], 'id_penghasilan_'))
+                                                @php($incomeNameField = str_replace('id_', 'nama_', $field[0]))
+                                                <div class="col-6 col-md-4"><label class="form-label" for="{{ $fieldId }}">{{ str_replace('Kode penghasilan', 'Penghasilan', $field[1]) }}</label><select class="form-select" id="{{ $fieldId }}" name="{{ $field[0] }}" data-income-select="{{ $field[0] }}"><option value="">Pilih penghasilan</option>@foreach($incomeOptions as $income)<option value="{{ $income->id_penghasilan }}" data-name="{{ $income->nama_penghasilan }}">{{ $income->nama_penghasilan }}</option>@endforeach</select><input type="hidden" name="{{ $incomeNameField }}" data-income-name="{{ $field[0] }}"></div>
+                                            @elseif(str_starts_with($field[0], 'nama_penghasilan_'))
+                                            @else
                                             <div class="col-6 col-md-4"><label class="form-label" for="{{ $fieldId }}">{{ $field[1] }}</label><input class="form-control" id="{{ $fieldId }}" name="{{ $field[0] }}" type="{{ $field[2] }}" @if(isset($field[3])) maxlength="{{ $field[3] }}" @endif @if($field[2] === 'date') max="{{ today()->subDay()->toDateString() }}" @endif></div>
+                                            @endif
                                         @endforeach
                                     </div></div>
                                 </details>

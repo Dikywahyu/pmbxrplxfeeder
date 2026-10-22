@@ -96,6 +96,13 @@ class PmbController extends Controller
             : collect();
         $profileFields = ['nama_mahasiswa', 'nik', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'handphone', 'jalan', 'kelurahan'];
         $profileComplete = $candidate && collect($profileFields)->every(fn ($field) => filled($candidate->{$field}));
+        $agamaOptions = DB::table('agamas')->orderBy('nama_agama')->get();
+        $transportOptions = DB::table('alat_transportasis')->orderBy('nama_alat_transportasi')->get();
+        $incomeOptions = DB::table('penghasilans')->orderBy('id_penghasilan')->get();
+        $regionCode = trim((string) old('id_wilayah', $candidate?->id_wilayah ?? ''));
+        $candidateRegion = $regionCode !== ''
+            ? DB::table('wilayahs')->where('id_wilayah', $regionCode)->first()
+            : null;
 
         return view('pmb.index', compact(
             'candidate',
@@ -107,8 +114,39 @@ class PmbController extends Controller
             'registrations',
             'profileComplete',
             'selectedPathId',
-            'selectedPeriodId'
+            'selectedPeriodId',
+            'agamaOptions',
+            'transportOptions',
+            'incomeOptions',
+            'candidateRegion'
         ));
+    }
+
+    public function searchWilayah(Request $request)
+    {
+        $term = trim((string) $request->query('q', ''));
+        $page = max(1, (int) $request->query('page', 1));
+
+        if (mb_strlen($term) < 2) {
+            return response()->json(['results' => [], 'pagination' => ['more' => false]]);
+        }
+
+        $regions = DB::table('wilayahs')
+            ->where('id_negara', 'ID')
+            ->where('id_level_wilayah', '3')
+            ->where(function ($query) use ($term) {
+                $query->where('nama_wilayah', 'like', '%'.$term.'%')
+                    ->orWhere('id_wilayah', 'like', $term.'%');
+            })
+            ->orderBy('nama_wilayah')
+            ->offset(($page - 1) * 20)
+            ->limit(21)
+            ->get(['id_wilayah as id', 'nama_wilayah as text']);
+
+        return response()->json([
+            'results' => $regions->take(20)->values(),
+            'pagination' => ['more' => $regions->count() > 20],
+        ]);
     }
 
     public function saveCandidateProfile(Request $request)
@@ -121,7 +159,8 @@ class PmbController extends Controller
             'jenis_kelamin' => ['nullable', Rule::in(['L', 'P'])],
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir' => ['nullable', 'date', 'before:today'],
-            'id_agama' => ['nullable', 'string', 'max:5'],
+            'id_agama' => ['nullable', Rule::exists('agamas', 'id_agama')],
+            'id_alat_transportasi' => ['nullable', Rule::exists('alat_transportasis', 'id_alat_transportasi')],
             'handphone' => ['nullable', 'string', 'max:20'],
             'telepon' => ['nullable', 'string', 'max:20'],
             'jalan' => ['nullable', 'string', 'max:255'],
@@ -130,7 +169,7 @@ class PmbController extends Controller
             'rw' => ['nullable', 'string', 'max:5'],
             'kelurahan' => ['nullable', 'string', 'max:255'],
             'kode_pos' => ['nullable', 'string', 'max:10'],
-            'id_wilayah' => ['nullable', 'string', 'max:10'],
+            'id_wilayah' => ['nullable', Rule::exists('wilayahs', 'id_wilayah')->where('id_negara', 'ID')->where('id_level_wilayah', '3')],
             'id_negara' => ['nullable', 'string', 'max:5'],
             'nomor_daftar_kip' => ['nullable', 'string', 'max:90'],
             'nomor_kip' => ['nullable', 'string', 'max:50'],
@@ -145,7 +184,7 @@ class PmbController extends Controller
             'nama_pendidikan_ayah' => ['nullable', 'string', 'max:255'],
             'id_pekerjaan_ayah' => ['nullable', 'string', 'max:5'],
             'nama_pekerjaan_ayah' => ['nullable', 'string', 'max:255'],
-            'id_penghasilan_ayah' => ['nullable', 'string', 'max:5'],
+            'id_penghasilan_ayah' => ['nullable', Rule::exists('penghasilans', 'id_penghasilan')],
             'nama_penghasilan_ayah' => ['nullable', 'string', 'max:255'],
             'nama_ibu_kandung' => ['nullable', 'string', 'max:255'],
             'nik_ibu' => ['nullable', 'string', 'max:20'],
@@ -154,7 +193,7 @@ class PmbController extends Controller
             'nama_pendidikan_ibu' => ['nullable', 'string', 'max:255'],
             'id_pekerjaan_ibu' => ['nullable', 'string', 'max:5'],
             'nama_pekerjaan_ibu' => ['nullable', 'string', 'max:255'],
-            'id_penghasilan_ibu' => ['nullable', 'string', 'max:5'],
+            'id_penghasilan_ibu' => ['nullable', Rule::exists('penghasilans', 'id_penghasilan')],
             'nama_penghasilan_ibu' => ['nullable', 'string', 'max:255'],
             'nama_wali' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir_wali' => ['nullable', 'date', 'before:today'],
@@ -162,12 +201,18 @@ class PmbController extends Controller
             'nama_pendidikan_wali' => ['nullable', 'string', 'max:255'],
             'id_pekerjaan_wali' => ['nullable', 'string', 'max:5'],
             'nama_pekerjaan_wali' => ['nullable', 'string', 'max:255'],
-            'id_penghasilan_wali' => ['nullable', 'string', 'max:5'],
+            'id_penghasilan_wali' => ['nullable', Rule::exists('penghasilans', 'id_penghasilan')],
             'nama_penghasilan_wali' => ['nullable', 'string', 'max:255'],
         ], ['nik.digits' => 'NIK harus terdiri dari 16 angka.']);
 
         $data['penerima_kps'] = $request->boolean('penerima_kps');
         $data['terdaftar_dtks'] = $request->boolean('terdaftar_dtks');
+        foreach (['ayah', 'ibu', 'wali'] as $parent) {
+            $incomeId = $data['id_penghasilan_'.$parent] ?? null;
+            $data['nama_penghasilan_'.$parent] = $incomeId
+                ? DB::table('penghasilans')->where('id_penghasilan', $incomeId)->value('nama_penghasilan')
+                : null;
+        }
 
         Candidate::updateOrCreate(
             ['user_id' => $request->user()->id],
@@ -439,11 +484,15 @@ class PmbController extends Controller
             $marketingPaymentRejectedCount = $registrations->filter(fn ($registration) =>
                 $registration->payments->contains(fn ($payment) => $payment->status === 'ditolak')
             )->count();
+            $agamaOptions = DB::table('agamas')->orderBy('nama_agama')->get();
+            $transportOptions = DB::table('alat_transportasis')->orderBy('nama_alat_transportasi')->get();
+            $incomeOptions = DB::table('penghasilans')->orderBy('id_penghasilan')->get();
 
             return response()->json([
                 'html' => view('admin.pmb.sections.marketing', compact(
                     'referral', 'fees', 'registrations', 'marketingStages', 'marketingProgramDistribution',
-                    'marketingPendingClaims', 'marketingDocumentFixCount', 'marketingPaymentRejectedCount'
+                    'marketingPendingClaims', 'marketingDocumentFixCount', 'marketingPaymentRejectedCount',
+                    'agamaOptions', 'transportOptions', 'incomeOptions'
                 ))->render(),
             ]);
         }
