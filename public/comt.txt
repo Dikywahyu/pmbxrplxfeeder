@@ -1,3 +1,3 @@
 git add .
-git commit -m "name revisi"
+git commit -m "revisi tabel syarat"
 git push origin main

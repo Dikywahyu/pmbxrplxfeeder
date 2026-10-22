@@ -70,7 +70,6 @@
                         <td><button type="button" class="btn btn-sm btn-light-primary text-primary" data-pmb-edit data-edit-schema="schedule" data-update-url="{{ route('admin.pmb.schedules.update') }}" data-payload="{{ json_encode(['record' => ['period_id' => (string) $schedule->period_id, 'path_id' => (string) $schedule->path_id, 'tanggal_mulai' => $schedule->tanggal_mulai->format('Y-m-d'), 'tanggal_selesai' => $schedule->tanggal_selesai->format('Y-m-d'), 'is_active' => $schedule->is_active ? '1' : '0'], 'options' => ['period_id' => $periods->map(fn($item) => [(string) $item->id, $item->nama_periode])->values(), 'path_id' => $paths->map(fn($item) => [(string) $item->id, $item->nama_jalur])->values()]]) }}"><i class="ti ti-edit"></i> Ubah jadwal</button></td>
                     </tr>
                 @endforeach
-                @if($schedules->isEmpty())<tr><td colspan="6" class="text-center text-muted">Belum ada jadwal jalur. Simpan biaya jalur terlebih dahulu, lalu atur jadwalnya di atas.</td></tr>@endif
             </tbody>
         </table></div>
     </div>
