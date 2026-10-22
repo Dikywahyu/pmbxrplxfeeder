@@ -1,6 +1,6 @@
 @extends('layouts.pmb-public')
 
-@section('title', 'PMB Universitas Cipta Wacana | Pendaftaran Mahasiswa Baru')
+@section('title', 'PMB Universitas (Uk) Cipta Wacana | Pendaftaran Mahasiswa Baru')
 @section('meta_description', 'Daftar kuliah di Universitas Cipta Wacana. Temukan informasi jalur dan jadwal PMB, persyaratan, program studi, serta alur pendaftaran mahasiswa baru online.')
 @section('canonical_url', route('home'))
 
@@ -11,7 +11,8 @@
         '@graph' => [
             [
                 '@type' => 'CollegeOrUniversity',
-                '@id' => route('home').'#university',
+                '@id' => route('home').
+                '#university',
                 'name' => 'Universitas Cipta Wacana',
                 'url' => route('home'),
                 'logo' => asset('logo.png'),
@@ -20,11 +21,14 @@
             ],
             [
                 '@type' => 'WebSite',
-                '@id' => route('home').'#website',
+                '@id' => route('home').
+                '#website',
                 'url' => route('home'),
                 'name' => 'PMB Universitas Cipta Wacana',
                 'inLanguage' => 'id-ID',
-                'publisher' => ['@id' => route('home').'#university'],
+                'publisher' => ['@id' => route('home').
+                    '#university'
+                ],
             ],
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
