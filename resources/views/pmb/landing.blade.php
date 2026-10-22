@@ -1,6 +1,35 @@
 @extends('layouts.pmb-public')
 
-@section('title', 'Penerimaan Mahasiswa Baru | Universitas Cipta Wacana')
+@section('title', 'PMB Universitas Cipta Wacana | Pendaftaran Mahasiswa Baru')
+@section('meta_description', 'Daftar kuliah di Universitas Cipta Wacana. Temukan informasi jalur dan jadwal PMB, persyaratan, program studi, serta alur pendaftaran mahasiswa baru online.')
+@section('canonical_url', route('home'))
+
+@push('meta')
+<script type="application/ld+json">
+    @json([
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+                '@type' => 'CollegeOrUniversity',
+                '@id' => route('home').'#university',
+                'name' => 'Universitas Cipta Wacana',
+                'url' => route('home'),
+                'logo' => asset('logo.png'),
+                'description' => 'Informasi Penerimaan Mahasiswa Baru Universitas Cipta Wacana, termasuk jadwal, jalur pendaftaran, persyaratan, dan proses seleksi.',
+                'sameAs' => ['https://cwcu.ac.id/'],
+            ],
+            [
+                '@type' => 'WebSite',
+                '@id' => route('home').'#website',
+                'url' => route('home'),
+                'name' => 'PMB Universitas Cipta Wacana',
+                'inLanguage' => 'id-ID',
+                'publisher' => ['@id' => route('home').'#university'],
+            ],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+</script>
+@endpush
 
 @push('styles')
 <style>

@@ -1,6 +1,8 @@
 @extends('layouts.pmb-public')
 
-@section('title', 'Informasi Jalur Pendaftaran PMB')
+@section('title', 'Jalur & Jadwal Pendaftaran PMB | Universitas Cipta Wacana')
+@section('meta_description', 'Lihat jalur Penerimaan Mahasiswa Baru Universitas Cipta Wacana yang sedang dibuka dan jadwal yang akan datang.')
+@section('canonical_url', route('pmb.admissions'))
 
 @push('styles')
 <style>
