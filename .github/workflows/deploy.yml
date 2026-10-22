@@ -1,20 +1,31 @@
-name: Deploy to Hosting
+name: Auto Deploy via SSH
+
 on:
   push:
     branches:
-      - main # Ganti dengan 'master' jika branch utama Anda bernama master
+      - main # Sesuaikan dengan branch utama repository Anda (bisa main atau master)
+
 jobs:
-  web-deploy:
-    name: FTP Deploy
+  deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-    
-    - name: Sync files
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        port: 21
+      - name: Executing Git Pull & Optimize on Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            # Masuk ke folder tujuan project di hosting
+            cd /home/u668498333/public_html/spmb.cwcu
+            
+            # Tarik pembaruan kode terbaru dari GitHub (hanya mengambil file yang berubah)
+            git pull origin main
+            
+            # Jalankan perintah optimasi khusus Laravel
+            composer install --no-dev --optimize-autoloader
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
