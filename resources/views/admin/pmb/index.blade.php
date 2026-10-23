@@ -165,8 +165,9 @@
             <div class="d-flex gap-3 align-items-start">
                 <span class="d-grid rounded-circle bg-success-subtle text-success" style="width:44px;height:44px;place-items:center"><i class="ti ti-link fs-5"></i></span>
                 <div class="flex-grow-1"><h5 class="mb-1">Link klaim siap dibagikan</h5><p class="text-muted small mb-2" id="pmb-marketing-claim-number"></p>
-                    <div class="input-group"><input type="text" class="form-control" id="pmb-marketing-claim-url" readonly aria-label="Link klaim mahasiswa"><button type="button" class="btn btn-primary" id="pmb-marketing-copy-claim" data-copy-link=""><i class="ti ti-copy me-1"></i>Salin link</button></div>
-                    <small class="text-warning-emphasis d-block mt-2">Link pribadi ini hanya dapat digunakan sekali dan berlaku 14 hari. Bagikan langsung kepada mahasiswa.</small>
+                    <div class="input-group"><input type="text" class="form-control" id="pmb-marketing-claim-url" readonly aria-label="Link klaim"><button type="button" class="btn btn-primary" id="pmb-marketing-copy-claim" data-copy-link=""><i class="ti ti-copy me-1"></i>Salin link</button></div>
+                    <a class="btn btn-success btn-sm mt-2 d-none" id="pmb-marketing-whatsapp-share" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp me-1"></i>Bagikan lewat WhatsApp</a>
+                    <small class="text-warning-emphasis d-block mt-2">Link pribadi ini hanya dapat digunakan sekali dan berlaku 14 hari. Bagikan langsung kepada penerima undangan.</small>
                 </div>
             </div>
         </div>
@@ -226,7 +227,7 @@
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <form id="pmb-marketing-spp-form" action="{{ route('admin.pmb.referrals.spp-rates.bulk') }}" method="POST">
             @csrf
-            <div class="modal-header"><div><h5 class="modal-title">Atur harga SPP marketing</h5><small class="text-muted">Harga diterapkan ke semua prodi pada periode dan jalur terpilih.</small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+            <div class="modal-header"><div><h5 class="modal-title">Atur harga SPP marketing</h5><small class="text-muted">Atur nominal masing-masing program studi untuk periode dan jalur terpilih.</small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
             <div class="modal-body" id="pmb-marketing-spp-fields"></div>
             <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Simpan harga</button></div>
         </form>
@@ -302,6 +303,9 @@
         referralSppRate: [
             ['nominal_spp', 'Harga SPP khusus (Rp)', 'number'],
         ],
+        referralContact: [
+            ['whatsapp', 'Nomor WhatsApp marketing', 'text'],
+        ],
         requirements: [
             ['path_id', 'Jalur pendaftaran', 'select'], ['nama_dokumen', 'Nama berkas', 'text'],
             ['is_required', 'Wajib diunggah', 'select', [['1', 'Ya'], ['0', 'Tidak']]],
@@ -329,9 +333,21 @@
     };
 
     const showMarketingClaimLink = (result) => {
-        document.getElementById('pmb-marketing-claim-number').textContent = `Nomor pendaftaran: ${result.registration_number}`;
+        const isMarketingInvite = Boolean(result.marketing_name);
+        document.getElementById('pmb-marketing-claim-number').textContent = isMarketingInvite
+            ? `Undangan akun: ${result.marketing_name} · kode referral ${result.referral_code}`
+            : `Nomor pendaftaran: ${result.registration_number}`;
         document.getElementById('pmb-marketing-claim-url').value = result.claim_url;
         document.getElementById('pmb-marketing-copy-claim').dataset.copyLink = result.claim_url;
+        const whatsappShare = document.getElementById('pmb-marketing-whatsapp-share');
+        if (isMarketingInvite && result.whatsapp) {
+            const number = result.whatsapp.replace(/\D/g, '').replace(/^0/, '62');
+            const shareText = `Halo ${result.marketing_name}, silakan klaim akun Marketing PMB melalui tautan ini: ${result.claim_url}`;
+            whatsappShare.href = `https://wa.me/${number}?text=${encodeURIComponent(shareText)}`;
+            whatsappShare.classList.remove('d-none');
+        } else {
+            whatsappShare.classList.add('d-none');
+        }
         marketingClaimResult.classList.remove('d-none');
         marketingClaimResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
@@ -640,6 +656,7 @@
         if (!form) return;
         event.preventDefault();
         const button = form.querySelector('[type="submit"]');
+        const isMarketingInvite = Boolean(form.querySelector('[name="marketing_name"]'));
         if (button) button.disabled = true;
         feedback.className = 'alert d-none';
         try {
@@ -660,7 +677,11 @@
             }
             if (!form.querySelector('input[name="_method"]')) form.reset();
             await loadSection();
+            if (isMarketingInvite && result.claim_url) showMarketingClaimLink(result);
             message(result.message || 'Perubahan berhasil disimpan.');
+            if (Array.isArray(result.errors) && result.errors.length) {
+                message(`Beberapa baris dilewati: ${result.errors.slice(0, 3).join(' | ')}`, true);
+            }
         } catch (error) {
             message(error.message || 'Terjadi kesalahan saat menghubungi server.', true);
         } finally {
@@ -669,6 +690,28 @@
     });
 
     root.addEventListener('click', async (event) => {
+        const marketingInviteButton = event.target.closest('[data-marketing-invite-link]');
+        if (marketingInviteButton) {
+            marketingInviteButton.disabled = true;
+            try {
+                const response = await fetch(marketingInviteButton.dataset.linkUrl, {
+                    method: 'POST',
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf },
+                    credentials: 'same-origin',
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Link klaim gagal dibuat.');
+                await loadSection();
+                showMarketingClaimLink(result);
+                message(result.message || 'Link klaim siap dibagikan.');
+            } catch (error) {
+                message(error.message || 'Link klaim gagal dibuat.', true);
+            } finally {
+                marketingInviteButton.disabled = false;
+            }
+            return;
+        }
+
         const marketingSppButton = event.target.closest('[data-marketing-spp-edit]');
         if (marketingSppButton) {
             const payload = JSON.parse(marketingSppButton.dataset.payload);
@@ -686,9 +729,120 @@
             };
             const marketing = document.createElement('div'); marketing.className = 'alert alert-primary py-2'; marketing.textContent = `Marketing: ${payload.marketing_name}`; marketingSppFields.append(marketing);
             const referral = document.createElement('input'); referral.type = 'hidden'; referral.name = 'referral_id'; referral.value = payload.referral_id; marketingSppFields.append(referral);
-            addField('period_id', 'Periode', 'select', payload.periods);
-            addField('path_id', 'Jalur pendaftaran', 'select', payload.paths);
-            addField('nominal_spp', 'Harga SPP (Rp)', 'number');
+            const periodSelect = addField('period_id', 'Periode', 'select', payload.periods);
+            const pathSelect = addField('path_id', 'Jalur pendaftaran', 'select', payload.paths);
+            const heading = document.createElement('div'); heading.className = 'd-flex justify-content-between align-items-center mt-3 mb-2';
+            const headingLabel = document.createElement('div');
+            headingLabel.innerHTML = '<strong>Harga SPP per program studi</strong><small class="text-muted d-block">Nominal dapat berbeda tiap prodi</small>';
+            const copyButton = document.createElement('button'); copyButton.type = 'button'; copyButton.className = 'btn btn-sm btn-outline-primary'; copyButton.innerHTML = '<i class="ti ti-copy me-1"></i>Salin dari periode/jalur lain';
+            heading.append(headingLabel, copyButton);
+            marketingSppFields.append(heading);
+            const copyPanel = document.createElement('div'); copyPanel.className = 'border rounded bg-light p-2 mb-2'; copyPanel.hidden = true;
+            const copyRow = document.createElement('div'); copyRow.className = 'row g-2 align-items-end';
+            const addCopySelect = (name, label, options) => {
+                const cell = document.createElement('div'); cell.className = 'col-12 col-md-4';
+                const caption = document.createElement('label'); caption.className = 'form-label small mb-1'; caption.textContent = label;
+                const select = document.createElement('select'); select.className = 'form-select form-select-sm'; select.name = name;
+                const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = `Pilih ${label.toLowerCase()}`; select.append(placeholder);
+                options.forEach(([value, text]) => { const option = document.createElement('option'); option.value = value; option.textContent = text; select.append(option); });
+                cell.append(caption, select); copyRow.append(cell); return select;
+            };
+            const sourcePeriodSelect = addCopySelect('source_period_id', 'Periode sumber', payload.periods);
+            const sourcePathSelect = addCopySelect('source_path_id', 'Jalur sumber', payload.paths);
+            const copyActionCell = document.createElement('div'); copyActionCell.className = 'col-12 col-md-4 d-grid';
+            const applyCopyButton = document.createElement('button'); applyCopyButton.type = 'button'; applyCopyButton.className = 'btn btn-sm btn-primary'; applyCopyButton.textContent = 'Terapkan salinan'; copyActionCell.append(applyCopyButton); copyRow.append(copyActionCell);
+            copyPanel.append(copyRow); marketingSppFields.append(copyPanel);
+            const programList = document.createElement('div'); programList.className = 'border rounded p-2'; programList.style.maxHeight = '300px'; programList.style.overflowY = 'auto';
+            (payload.programs || []).forEach(([programId, programName], index) => {
+                const row = document.createElement('div'); row.className = 'row g-2 align-items-center mb-2';
+                const nameCell = document.createElement('div'); nameCell.className = 'col-7';
+                const label = document.createElement('label'); label.className = 'form-label small mb-0'; label.htmlFor = `marketing-spp-program-${index}`; label.textContent = programName;
+                const programInput = document.createElement('input'); programInput.type = 'hidden'; programInput.name = `items[${index}][program_id]`; programInput.value = programId;
+                nameCell.append(label, programInput);
+                const priceCell = document.createElement('div'); priceCell.className = 'col-5';
+                const priceInput = document.createElement('input'); priceInput.className = 'form-control form-control-sm'; priceInput.id = `marketing-spp-program-${index}`; priceInput.type = 'number'; priceInput.name = `items[${index}][nominal_spp]`; priceInput.min = '0'; priceInput.step = '1000'; priceInput.placeholder = 'Rp'; priceInput.required = true;
+                priceCell.append(priceInput); row.append(nameCell, priceCell);
+                programList.append(row);
+            });
+            marketingSppFields.append(programList);
+            const loadingStatus = document.createElement('div');
+            loadingStatus.className = 'small text-muted mt-2';
+            loadingStatus.setAttribute('aria-live', 'polite');
+            marketingSppFields.append(loadingStatus);
+
+            const getPriceInputs = () => [...programList.querySelectorAll('input[name$="[nominal_spp]"]')];
+            const populateRates = (items) => {
+                const saved = new Map((items || []).map((item) => [String(item.program_id), item.nominal_spp]));
+                getPriceInputs().forEach((input) => {
+                    input.value = '';
+                    const programInput = input.closest('.row')?.querySelector('input[name$="[program_id]"]');
+                    if (saved.has(String(programInput?.value))) input.value = saved.get(String(programInput.value));
+                });
+                return saved.size;
+            };
+
+            let ratesRequest;
+            const loadExistingRates = async () => {
+                const periodId = periodSelect.value;
+                const pathId = pathSelect.value;
+                const inputs = [...programList.querySelectorAll('input[name$="[nominal_spp]"]')];
+                inputs.forEach((input) => { input.value = ''; });
+                if (!periodId || !pathId) {
+                    loadingStatus.textContent = 'Pilih periode dan jalur untuk memuat harga tersimpan.';
+                    return;
+                }
+                if (ratesRequest) ratesRequest.abort();
+                ratesRequest = new AbortController();
+                programList.style.opacity = '.55';
+                loadingStatus.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Memuat harga SPP tersimpan...';
+                try {
+                    const params = new URLSearchParams({ marketing_id: payload.referral_id, periode_id: periodId, jalur_id: pathId });
+                    const response = await fetch(`/api/spp-marketing?${params.toString()}`, {
+                        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                        signal: ratesRequest.signal,
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        const errors = Object.values(result.errors || {}).flat();
+                        throw new Error(errors.join(' ') || result.message || 'Harga SPP gagal dimuat.');
+                    }
+                    const savedCount = populateRates(result.items);
+                    loadingStatus.textContent = savedCount ? `${savedCount} harga prodi berhasil dimuat.` : 'Belum ada harga tersimpan untuk kombinasi ini.';
+                } catch (error) {
+                    if (error.name === 'AbortError') return;
+                    loadingStatus.textContent = 'Harga SPP belum dapat dimuat.';
+                    message(error.message || 'Harga SPP gagal dimuat.', true);
+                } finally {
+                    programList.style.opacity = '1';
+                }
+            };
+            periodSelect.addEventListener('change', loadExistingRates);
+            pathSelect.addEventListener('change', loadExistingRates);
+            copyButton.addEventListener('click', () => { copyPanel.hidden = !copyPanel.hidden; });
+            applyCopyButton.addEventListener('click', async () => {
+                if (!sourcePeriodSelect.value || !sourcePathSelect.value) {
+                    message('Pilih periode dan jalur sumber terlebih dahulu.', true);
+                    return;
+                }
+                applyCopyButton.disabled = true;
+                programList.style.opacity = '.55';
+                loadingStatus.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Menyalin harga SPP...';
+                try {
+                    const params = new URLSearchParams({ marketing_id: payload.referral_id, periode_sumber: sourcePeriodSelect.value, jalur_sumber: sourcePathSelect.value });
+                    const response = await fetch(`/api/spp-marketing?${params.toString()}`, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message || 'Harga sumber gagal dimuat.');
+                    const copiedCount = populateRates(result.items);
+                    loadingStatus.textContent = copiedCount ? `${copiedCount} harga prodi berhasil disalin. Silakan periksa atau ubah sebelum menyimpan.` : 'Tidak ada harga tersimpan pada periode/jalur sumber.';
+                } catch (error) {
+                    loadingStatus.textContent = 'Salinan harga gagal dimuat.';
+                    message(error.message || 'Harga sumber gagal dimuat.', true);
+                } finally {
+                    programList.style.opacity = '1';
+                    applyCopyButton.disabled = false;
+                }
+            });
             marketingSppModal.show();
             return;
         }

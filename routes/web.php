@@ -7,6 +7,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\PassportClientController;
 use App\Http\Controllers\PmbController;
 use App\Http\Controllers\PmbClaimController;
+use App\Http\Controllers\PmbMarketingClaimController;
 use App\Http\Controllers\Admin\PmbMarketingController;
 use App\Http\Controllers\CbtController;
 
@@ -41,6 +42,16 @@ Route::post('/pmb/claim/{token}', [PmbClaimController::class, 'claim'])
     ->where('token', '[A-Za-z0-9]{64}')
     ->middleware('throttle:10,1')
     ->name('pmb.claim.store');
+Route::get('/marketing/claim/{token}', [PmbMarketingClaimController::class, 'show'])
+    ->where('token', '[A-Fa-f0-9]{64}')
+    ->name('pmb.marketing-claim.show');
+Route::post('/marketing/claim/{token}', [PmbMarketingClaimController::class, 'claim'])
+    ->where('token', '[A-Fa-f0-9]{64}')
+    ->middleware('throttle:10,1')
+    ->name('pmb.marketing-claim.store');
+Route::get('/api/spp-marketing', [PmbController::class, 'getMarketingSppRates'])
+    ->middleware(['auth', 'verified', '2fa', 'can:pmb-manage'])
+    ->name('api.spp-marketing');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', fn() => redirect('/auth/login'));
@@ -144,6 +155,10 @@ Route::prefix('admin/pmb')->name('admin.pmb.')->middleware(['auth', 'verified', 
     Route::put('/requirements/{requirementId}', [PmbController::class, 'updateDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.update');
     Route::delete('/requirements/{requirementId}', [PmbController::class, 'destroyDocumentRequirement'])->middleware('can:pmb-manage')->name('requirements.destroy');
     Route::post('/referrals', [PmbController::class, 'storeReferral'])->middleware('can:pmb-manage')->name('referrals.store');
+    Route::post('/referrals/import', [PmbController::class, 'importReferrals'])->middleware('can:pmb-manage')->name('referrals.import');
+    Route::get('/referrals/import-template', [PmbController::class, 'downloadReferralImportTemplate'])->middleware('can:pmb-manage')->name('referrals.import-template');
+    Route::post('/referrals/{referralId}/claim-link', [PmbController::class, 'renewReferralClaimLink'])->middleware('can:pmb-manage')->name('referrals.claim-link');
+    Route::put('/referrals/{referralId}/whatsapp', [PmbController::class, 'updateReferralWhatsapp'])->middleware('can:pmb-manage')->name('referrals.whatsapp.update');
     Route::post('/referrals/spp-rates', [PmbController::class, 'saveReferralSppRate'])->middleware('can:pmb-manage')->name('referrals.spp-rates.store');
     Route::post('/referrals/spp-rates/bulk', [PmbController::class, 'saveReferralSppRatesBulk'])->middleware('can:pmb-manage')->name('referrals.spp-rates.bulk');
     Route::put('/referrals/spp-rates/{rateId}', [PmbController::class, 'updateReferralSppRate'])->middleware('can:pmb-manage')->name('referrals.spp-rates.update');

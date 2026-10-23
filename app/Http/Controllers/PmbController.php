@@ -573,9 +573,10 @@ class PmbController extends Controller
                 $fees = Fee::with(['period', 'path', 'program'])->orderBy('period_id')->orderBy('path_id')->get();
                 $periods = Period::orderByDesc('tanggal_mulai')->get();
                 $paths = PmbPath::orderBy('nama_jalur')->get();
+                $programs = StudyProgram::orderBy('nama_prodi')->get(['id', 'nama_prodi']);
                 $sppRates = ReferralSppRate::with(['referral.owner', 'fee.period', 'fee.path', 'fee.program'])
                     ->latest()->get();
-                return view('admin.pmb.sections.referrals', compact('referrals', 'users', 'fees', 'periods', 'paths', 'sppRates'))->render();
+                return view('admin.pmb.sections.referrals', compact('referrals', 'users', 'fees', 'periods', 'paths', 'programs', 'sppRates'))->render();
             })(),
             'requirements' => (function () {
                 $paths = PmbPath::orderBy('nama_jalur')->get();
@@ -874,15 +875,137 @@ class PmbController extends Controller
     public function storeReferral(Request $request)
     {
         $data = $request->validate([
-            'owner_id' => ['required', 'exists:users,id', Rule::unique('pmb_referrals', 'owner_id')],
+            'marketing_name' => ['required', 'string', 'max:255'],
+            'whatsapp' => ['required', 'string', 'max:30'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
         ]);
         do {
             $code = Str::upper(Str::random(10));
         } while (Referral::where('kode_referral', $code)->exists());
 
-        Referral::create(['owner_id' => $data['owner_id'], 'kode_referral' => $code, 'is_active' => true]);
+        $token = bin2hex(random_bytes(32));
+        $referral = Referral::create([
+            'marketing_name' => trim($data['marketing_name']),
+            'whatsapp' => preg_replace('/[^0-9+]/', '', $data['whatsapp']),
+            'contact_email' => $data['contact_email'] ?? null,
+            'claim_token_hash' => hash('sha256', $token),
+            'claim_expires_at' => now()->addDays(14),
+            'created_by' => $request->user()->id,
+            'kode_referral' => $code,
+            'is_active' => true,
+        ]);
 
-        return $this->mutationResponse($request, 'Kode referral marketing berhasil dibuat.');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Data marketing dan kode referral berhasil disiapkan.',
+                'marketing_name' => $referral->marketing_name,
+                'whatsapp' => $referral->whatsapp,
+                'claim_url' => route('pmb.marketing-claim.show', ['token' => $token]),
+                'referral_code' => $referral->kode_referral,
+            ]);
+        }
+
+        return back()->with('success', 'Data marketing dan kode referral berhasil disiapkan.');
+    }
+
+    public function importReferrals(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+        ]);
+
+        $handle = fopen($request->file('file')->getRealPath(), 'rb');
+        abort_unless($handle, 422, 'File import tidak dapat dibaca.');
+
+        $firstLine = fgets($handle);
+        rewind($handle);
+        $delimiter = substr_count((string) $firstLine, ';') > substr_count((string) $firstLine, ',') ? ';' : ',';
+        $headers = fgetcsv($handle, 0, $delimiter);
+        $headers = array_map(function ($header) {
+            $header = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header);
+            return Str::of($header)->lower()->trim()->replace([' ', '-', '.'], '_')->toString();
+        }, $headers ?: []);
+        $headerMap = array_flip($headers);
+
+        $nameKeys = ['nama_marketing', 'nama', 'name', 'marketing'];
+        $phoneKeys = ['whatsapp', 'no_whatsapp', 'nomor_whatsapp', 'phone', 'telepon', 'no_hp'];
+        $emailKeys = ['email', 'email_marketing'];
+        $getValue = static function (array $row, array $keys) use ($headerMap) {
+            foreach ($keys as $key) {
+                $index = $headerMap[$key] ?? false;
+                if ($index !== false && filled($row[$index] ?? null)) return trim((string) $row[$index]);
+            }
+            return null;
+        };
+
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        DB::transaction(function () use ($handle, $delimiter, $getValue, $nameKeys, $phoneKeys, $emailKeys, &$created, &$skipped, &$errors) {
+            $line = 1;
+            while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+                $line++;
+                if (count(array_filter($row, static fn ($value) => filled(trim((string) $value)))) === 0) continue;
+
+                $name = $getValue($row, $nameKeys);
+                $phone = $getValue($row, $phoneKeys);
+                $email = $getValue($row, $emailKeys);
+                if (blank($name) || blank($phone)) {
+                    $errors[] = "Baris {$line}: nama_marketing dan whatsapp wajib diisi.";
+                    $skipped++;
+                    continue;
+                }
+
+                $phone = preg_replace('/[^0-9+]/', '', $phone);
+                if (blank($phone)) {
+                    $errors[] = "Baris {$line}: nomor WhatsApp tidak valid.";
+                    $skipped++;
+                    continue;
+                }
+                if (Referral::where('whatsapp', $phone)->exists()) {
+                    $errors[] = "Baris {$line}: nomor WhatsApp sudah terdaftar.";
+                    $skipped++;
+                    continue;
+                }
+                if ($email && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $errors[] = "Baris {$line}: format email tidak valid.";
+                    $skipped++;
+                    continue;
+                }
+
+                do {
+                    $code = Str::upper(Str::random(10));
+                } while (Referral::where('kode_referral', $code)->exists());
+                $token = bin2hex(random_bytes(32));
+                Referral::create([
+                    'marketing_name' => $name,
+                    'whatsapp' => $phone,
+                    'contact_email' => $email ?: null,
+                    'claim_token_hash' => hash('sha256', $token),
+                    'claim_expires_at' => now()->addDays(14),
+                    'created_by' => auth()->id(),
+                    'kode_referral' => $code,
+                    'is_active' => true,
+                ]);
+                $created++;
+            }
+        });
+        fclose($handle);
+        return response()->json([
+            'message' => "Import selesai: {$created} marketing ditambahkan, {$skipped} baris dilewati.",
+            'created' => $created,
+            'skipped' => $skipped,
+            'errors' => array_slice($errors, 0, 20),
+        ]);
+    }
+
+    public function downloadReferralImportTemplate()
+    {
+        return response()->streamDownload(function () {
+            echo "nama_marketing,whatsapp,email\n";
+            echo "Contoh Marketing,081234567890,marketing@example.com\n";
+        }, 'template-import-marketing.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function saveReferralSppRate(Request $request)
@@ -901,6 +1024,75 @@ class PmbController extends Controller
         return $this->mutationResponse($request, 'Harga SPP khusus marketing berhasil disimpan.');
     }
 
+    public function getMarketingSppRates(Request $request)
+    {
+        $request->merge([
+            'periode_id' => $request->input('periode_id', $request->input('periode_sumber')),
+            'jalur_id' => $request->input('jalur_id', $request->input('jalur_sumber')),
+        ]);
+        $data = $request->validate([
+            'marketing_id' => ['required', 'integer', 'exists:pmb_referrals,id'],
+            'periode_id' => ['required', 'integer', 'exists:pmb_periods,id'],
+            'jalur_id' => ['required', 'integer', 'exists:pmb_paths,id'],
+        ]);
+
+        $items = ReferralSppRate::query()
+            ->where('referral_id', $data['marketing_id'])
+            ->whereHas('fee', fn ($query) => $query
+                ->where('period_id', $data['periode_id'])
+                ->where('path_id', $data['jalur_id']))
+            ->with('fee:id,program_id')
+            ->get()
+            ->map(fn (ReferralSppRate $rate) => [
+                'program_id' => (string) $rate->fee->program_id,
+                'nominal_spp' => (string) $rate->nominal_spp,
+            ])
+            ->values();
+
+        return response()->json(['items' => $items]);
+    }
+
+    public function renewReferralClaimLink(Request $request, int $referralId)
+    {
+        $referral = Referral::findOrFail($referralId);
+        abort_if($referral->owner_id || $referral->claimed_at, 422, 'Marketing ini sudah mengklaim akunnya.');
+
+        $token = bin2hex(random_bytes(32));
+        $referral->update([
+            'claim_token_hash' => hash('sha256', $token),
+            'claim_expires_at' => now()->addDays(14),
+        ]);
+
+        return response()->json([
+            'message' => 'Link klaim baru berhasil dibuat dan berlaku 14 hari.',
+            'marketing_name' => $referral->marketing_name,
+            'whatsapp' => $referral->whatsapp,
+            'claim_url' => route('pmb.marketing-claim.show', ['token' => $token]),
+            'referral_code' => $referral->kode_referral,
+        ]);
+    }
+
+    public function updateReferralWhatsapp(Request $request, int $referralId)
+    {
+        $data = $request->validate([
+            'whatsapp' => ['required', 'string', 'max:30'],
+        ]);
+        $whatsapp = preg_replace('/[^0-9+]/', '', $data['whatsapp']);
+        if (blank($whatsapp)) {
+            throw ValidationException::withMessages(['whatsapp' => 'Nomor WhatsApp harus berisi angka.']);
+        }
+
+        DB::transaction(function () use ($referralId, $whatsapp) {
+            $referral = Referral::with('owner')->lockForUpdate()->findOrFail($referralId);
+            $referral->update(['whatsapp' => $whatsapp]);
+            if ($referral->owner) {
+                $referral->owner->update(['phone' => $whatsapp]);
+            }
+        });
+
+        return $this->mutationResponse($request, 'Nomor WhatsApp marketing berhasil diperbarui.');
+    }
+
     public function updateReferralSppRate(Request $request, int $rateId)
     {
         $data = $request->validate([
@@ -917,10 +1109,23 @@ class PmbController extends Controller
             'referral_id' => ['required', 'exists:pmb_referrals,id'],
             'period_id' => ['required', 'exists:pmb_periods,id'],
             'path_id' => ['required', 'exists:pmb_paths,id'],
-            'nominal_spp' => ['required', 'numeric', 'min:0'],
+            'nominal_spp' => ['nullable', 'numeric', 'min:0', 'required_without:items'],
+            'items' => ['nullable', 'array', 'min:1'],
+            'items.*.program_id' => ['required_with:items', 'integer', 'distinct', 'exists:pmb_study_programs,id'],
+            'items.*.nominal_spp' => ['required_with:items', 'numeric', 'min:0'],
         ]);
-        $fees = Fee::where('period_id', $data['period_id'])
-            ->where('path_id', $data['path_id'])->get();
+        $fees = Fee::where('period_id', $data['period_id'])->where('path_id', $data['path_id'])
+            ->when(! empty($data['items']), fn ($query) => $query->whereIn('program_id', collect($data['items'])->pluck('program_id')))
+            ->get();
+        if (! empty($data['items'])) {
+            $requestedPrograms = collect($data['items'])->pluck('program_id')->map(fn ($id) => (int) $id);
+            $missingPrograms = $requestedPrograms->diff($fees->pluck('program_id')->map(fn ($id) => (int) $id));
+            if ($missingPrograms->isNotEmpty()) {
+                throw ValidationException::withMessages([
+                    'items' => 'Sebagian program studi belum memiliki konfigurasi biaya untuk periode dan jalur tersebut.',
+                ]);
+            }
+        }
         if ($fees->isEmpty()) {
             throw ValidationException::withMessages([
                 'period_id' => 'Belum ada konfigurasi biaya untuk periode dan jalur tersebut. Atur biaya PMB terlebih dahulu.',
@@ -928,15 +1133,16 @@ class PmbController extends Controller
         }
 
         DB::transaction(function () use ($data, $fees) {
+            $prices = collect($data['items'] ?? [])->keyBy('program_id');
             foreach ($fees as $fee) {
                 ReferralSppRate::updateOrCreate(
                     ['referral_id' => $data['referral_id'], 'fee_id' => $fee->id],
-                    ['nominal_spp' => $data['nominal_spp']]
+                    ['nominal_spp' => $prices->get($fee->program_id)['nominal_spp'] ?? $data['nominal_spp']]
                 );
             }
         });
 
-        return $this->mutationResponse($request, "Harga SPP berhasil diterapkan ke {$fees->count()} program studi.");
+        return $this->mutationResponse($request, "Harga SPP berhasil disimpan untuk {$fees->count()} program studi.");
     }
 
     public function destroyReferralSppRate(Request $request, int $rateId)

@@ -15,7 +15,11 @@ class Referral extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'claim_expires_at' => 'datetime',
+            'claimed_at' => 'datetime',
+        ];
     }
 
     public function owner(): BelongsTo
